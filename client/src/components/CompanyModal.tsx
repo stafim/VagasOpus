@@ -1,0 +1,202 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import React from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { insertCompanySchema, type InsertCompany, type CompanyWithCostCenters } from "@shared/schema";
+import { z } from "zod";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+
+interface CompanyModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  companyId?: string;
+}
+
+export default function CompanyModal({ isOpen, onClose, companyId }: CompanyModalProps) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const isEditing = !!companyId;
+
+  const { data: companyData } = useQuery<CompanyWithCostCenters>({
+    queryKey: ["/api/companies", companyId],
+    enabled: isEditing,
+  });
+
+  const companyFormSchema = z.object({
+    name: z.string().min(1, "Nome é obrigatório"),
+    description: z.string().optional().default(""),
+    website: z.string().optional().default(""),
+  });
+
+  const form = useForm<z.infer<typeof companyFormSchema>>({
+    resolver: zodResolver(companyFormSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      website: "",
+    },
+  });
+
+  // Update form when company data is loaded
+  React.useEffect(() => {
+    if (isEditing && companyData && !form.formState.isDirty) {
+      form.reset({
+        name: companyData?.name || "",
+        description: companyData?.description || "",
+        website: companyData?.website || "",
+      });
+    }
+  }, [isEditing, companyData, form]);
+
+  const createCompanyMutation = useMutation({
+    mutationFn: async (data: InsertCompany) => {
+      const response = await apiRequest("POST", "/api/companies", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
+      toast({
+        title: "Sucesso",
+        description: "Empresa criada com sucesso!",
+      });
+      onClose();
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro",
+        description: "Erro ao criar empresa. Tente novamente.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateCompanyMutation = useMutation({
+    mutationFn: async (data: Partial<InsertCompany>) => {
+      const response = await apiRequest("PUT", `/api/companies/${companyId}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/companies", companyId] });
+      toast({
+        title: "Sucesso",
+        description: "Empresa atualizada com sucesso!",
+      });
+      onClose();
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar empresa. Tente novamente.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (data: InsertCompany) => {
+    if (isEditing) {
+      updateCompanyMutation.mutate(data);
+    } else {
+      createCompanyMutation.mutate(data);
+    }
+  };
+
+  const handleClose = () => {
+    form.reset();
+    onClose();
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{isEditing ? "Editar Empresa" : "Nova Empresa"}</DialogTitle>
+        </DialogHeader>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome da Empresa</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ex: TechCorp Ltda" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="website"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Website</FormLabel>
+                  <FormControl>
+                    <Input placeholder="https://www.empresa.com.br" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descrição</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Descrição da empresa, ramo de atividade, missão..."
+                      className="min-h-[100px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex items-center justify-end space-x-4">
+              <Button type="button" variant="outline" onClick={handleClose} data-testid="button-cancel">
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={createCompanyMutation.isPending || updateCompanyMutation.isPending}
+                data-testid="button-save"
+              >
+                {(createCompanyMutation.isPending || updateCompanyMutation.isPending) && (
+                  <i className="fas fa-spinner fa-spin mr-2"></i>
+                )}
+                {isEditing ? "Atualizar Empresa" : "Criar Empresa"}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}

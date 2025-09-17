@@ -147,6 +147,29 @@ export const rolePermissions = pgTable("role_permissions", {
   isGranted: boolean("is_granted").default(true),
 });
 
+// Selection process status enum
+export const selectionStatusEnum = pgEnum("selection_status", [
+  "applied",
+  "under_review", 
+  "phone_screening",
+  "technical_test",
+  "interview_scheduled",
+  "interview_completed", 
+  "final_review",
+  "approved",
+  "rejected",
+  "hired"
+]);
+
+// Interview types enum
+export const interviewTypeEnum = pgEnum("interview_type", [
+  "phone_screening",
+  "technical",
+  "behavioral", 
+  "final",
+  "panel"
+]);
+
 // Applications table
 export const applications = pgTable("applications", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -156,8 +179,66 @@ export const applications = pgTable("applications", {
   candidatePhone: varchar("candidate_phone"),
   resume: varchar("resume"), // URL to resume file
   coverLetter: text("cover_letter"),
-  status: varchar("status").default("pending"), // pending, reviewing, approved, rejected
+  status: selectionStatusEnum("status").default("applied"),
+  currentStage: varchar("current_stage").default("application_received"),
+  overallScore: integer("overall_score").default(0), // Score out of 100
+  rejectionReason: text("rejection_reason"),
+  notes: text("notes"), // Internal notes about candidate
   appliedAt: timestamp("applied_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Selection process stages table
+export const selectionStages = pgTable("selection_stages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  jobId: varchar("job_id").references(() => jobs.id),
+  name: varchar("name", { length: 255 }).notNull(), // "Application Review", "Phone Screen", etc.
+  description: text("description"),
+  order: integer("order").notNull(), // Stage order (1, 2, 3...)
+  isRequired: boolean("is_required").default(true),
+  passingScore: integer("passing_score").default(70), // Minimum score to advance
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Interviews table
+export const interviews = pgTable("interviews", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  applicationId: varchar("application_id").references(() => applications.id),
+  interviewerId: varchar("interviewer_id").references(() => users.id),
+  stageId: varchar("stage_id").references(() => selectionStages.id),
+  type: interviewTypeEnum("type").notNull(),
+  scheduledAt: timestamp("scheduled_at"),
+  duration: integer("duration").default(60), // Duration in minutes
+  location: varchar("location"), // Room/link
+  status: varchar("status").default("scheduled"), // scheduled, completed, cancelled, rescheduled
+  score: integer("score"), // Interview score out of 100
+  feedback: text("feedback"),
+  recommendations: text("recommendations"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Interview evaluation criteria table
+export const interviewCriteria = pgTable("interview_criteria", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  interviewId: varchar("interview_id").references(() => interviews.id),
+  criterion: varchar("criterion", { length: 255 }).notNull(), // "Technical Skills", "Communication", etc.
+  score: integer("score").notNull(), // Score out of 10
+  notes: text("notes"),
+});
+
+// Application stage progress tracking
+export const applicationStageProgress = pgTable("application_stage_progress", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  applicationId: varchar("application_id").references(() => applications.id),
+  stageId: varchar("stage_id").references(() => selectionStages.id),
+  status: varchar("status").default("pending"), // pending, in_progress, completed, failed
+  score: integer("score"), // Score for this stage
+  feedback: text("feedback"),
+  completedAt: timestamp("completed_at"),
+  reviewedBy: varchar("reviewed_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Relations
@@ -190,11 +271,13 @@ export const jobsRelations = relations(jobs, ({ one, many }) => ({
   applications: many(applications),
 }));
 
-export const applicationsRelations = relations(applications, ({ one }) => ({
+export const applicationsRelations = relations(applications, ({ one, many }) => ({
   job: one(jobs, {
     fields: [applications.jobId],
     references: [jobs.id],
   }),
+  interviews: many(interviews),
+  stageProgress: many(applicationStageProgress),
 }));
 
 export const userCompanyRolesRelations = relations(userCompanyRoles, ({ one }) => ({
@@ -215,6 +298,54 @@ export const userCompanyRolesRelations = relations(userCompanyRoles, ({ one }) =
 export const usersRelations = relations(users, ({ many }) => ({
   companyRoles: many(userCompanyRoles),
   createdJobs: many(jobs),
+  interviews: many(interviews),
+}));
+
+export const selectionStagesRelations = relations(selectionStages, ({ one, many }) => ({
+  job: one(jobs, {
+    fields: [selectionStages.jobId],
+    references: [jobs.id],
+  }),
+  interviews: many(interviews),
+  stageProgress: many(applicationStageProgress),
+}));
+
+export const interviewsRelations = relations(interviews, ({ one, many }) => ({
+  application: one(applications, {
+    fields: [interviews.applicationId],
+    references: [applications.id],
+  }),
+  interviewer: one(users, {
+    fields: [interviews.interviewerId],
+    references: [users.id],
+  }),
+  stage: one(selectionStages, {
+    fields: [interviews.stageId],
+    references: [selectionStages.id],
+  }),
+  criteria: many(interviewCriteria),
+}));
+
+export const interviewCriteriaRelations = relations(interviewCriteria, ({ one }) => ({
+  interview: one(interviews, {
+    fields: [interviewCriteria.interviewId],
+    references: [interviews.id],
+  }),
+}));
+
+export const applicationStageProgressRelations = relations(applicationStageProgress, ({ one }) => ({
+  application: one(applications, {
+    fields: [applicationStageProgress.applicationId],
+    references: [applications.id],
+  }),
+  stage: one(selectionStages, {
+    fields: [applicationStageProgress.stageId],
+    references: [selectionStages.id],
+  }),
+  reviewer: one(users, {
+    fields: [applicationStageProgress.reviewedBy],
+    references: [users.id],
+  }),
 }));
 
 // Insert schemas
@@ -245,6 +376,28 @@ export const insertJobSchema = createInsertSchema(jobs).omit({
 export const insertApplicationSchema = createInsertSchema(applications).omit({
   id: true,
   appliedAt: true,
+  updatedAt: true,
+});
+
+export const insertSelectionStageSchema = createInsertSchema(selectionStages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertInterviewSchema = createInsertSchema(interviews).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertInterviewCriteriaSchema = createInsertSchema(interviewCriteria).omit({
+  id: true,
+});
+
+export const insertApplicationStageProgressSchema = createInsertSchema(applicationStageProgress).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export const insertUserCompanyRoleSchema = createInsertSchema(userCompanyRoles).omit({
@@ -274,6 +427,18 @@ export type InsertJob = z.infer<typeof insertJobSchema>;
 export type Application = typeof applications.$inferSelect;
 export type InsertApplication = z.infer<typeof insertApplicationSchema>;
 
+export type SelectionStage = typeof selectionStages.$inferSelect;
+export type InsertSelectionStage = z.infer<typeof insertSelectionStageSchema>;
+
+export type Interview = typeof interviews.$inferSelect;
+export type InsertInterview = z.infer<typeof insertInterviewSchema>;
+
+export type InterviewCriteria = typeof interviewCriteria.$inferSelect;
+export type InsertInterviewCriteria = z.infer<typeof insertInterviewCriteriaSchema>;
+
+export type ApplicationStageProgress = typeof applicationStageProgress.$inferSelect;
+export type InsertApplicationStageProgress = z.infer<typeof insertApplicationStageProgressSchema>;
+
 export type UserCompanyRole = typeof userCompanyRoles.$inferSelect;
 export type InsertUserCompanyRole = z.infer<typeof insertUserCompanyRoleSchema>;
 
@@ -287,6 +452,26 @@ export type JobWithDetails = Job & {
   createdByUser?: User;
   applications?: Application[];
   applicationsCount?: number;
+  selectionStages?: SelectionStage[];
+};
+
+export type ApplicationWithDetails = Application & {
+  job?: Job;
+  interviews?: Interview[];
+  stageProgress?: ApplicationStageProgress[];
+  currentStageInfo?: SelectionStage;
+};
+
+export type InterviewWithDetails = Interview & {
+  application?: Application;
+  interviewer?: User;
+  stage?: SelectionStage;
+  criteria?: InterviewCriteria[];
+  candidate?: {
+    name: string;
+    email: string;
+    jobTitle: string;
+  };
 };
 
 export type CompanyWithCostCenters = Company & {
@@ -309,3 +494,21 @@ export type ApplicationsByMonthResponse = Array<{ month: string; count: number }
 export type JobsListResponse = JobWithDetails[];
 
 export type CompaniesListResponse = CompanyWithCostCenters[];
+
+// Selection process response types
+export type SelectionProcessMetrics = {
+  totalApplications: number;
+  byStatus: Array<{ status: string; count: number }>;
+  averageTimeToHire: number; // in days
+  conversionRates: {
+    applicationToInterview: number;
+    interviewToOffer: number;
+    offerToHire: number;
+  };
+};
+
+export type InterviewCalendarResponse = {
+  upcomingInterviews: InterviewWithDetails[];
+  todayInterviews: InterviewWithDetails[];
+  overdueInterviews: InterviewWithDetails[];
+};

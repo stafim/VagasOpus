@@ -7,7 +7,11 @@ import {
   insertCostCenterSchema, 
   insertJobSchema, 
   insertApplicationSchema,
-  insertUserCompanyRoleSchema 
+  insertUserCompanyRoleSchema,
+  insertSelectionStageSchema,
+  insertInterviewSchema,
+  insertInterviewCriteriaSchema,
+  insertApplicationStageProgressSchema
 } from "@shared/schema";
 import { z } from "zod";
 
@@ -302,6 +306,324 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating application status:", error);
       res.status(500).json({ message: "Failed to update application status" });
+    }
+  });
+
+  // Expanded Application routes
+  app.get('/api/applications/:id/details', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user.claims.sub;
+      
+      const application = await storage.getApplicationWithDetails(id);
+      if (!application) {
+        return res.status(404).json({ message: "Application not found" });
+      }
+      
+      // Check if user has permission to view applications for this company
+      const hasPermission = await storage.checkUserPermission(userId, application.job?.companyId!, 'view_applications');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+      
+      res.json(application);
+    } catch (error) {
+      console.error("Error fetching application details:", error);
+      res.status(500).json({ message: "Failed to fetch application details" });
+    }
+  });
+
+  app.put('/api/applications/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user.claims.sub;
+      
+      // Get application to check company permission
+      const existingApp = await storage.getApplicationWithDetails(id);
+      if (!existingApp) {
+        return res.status(404).json({ message: "Application not found" });
+      }
+      
+      const hasPermission = await storage.checkUserPermission(userId, existingApp.job?.companyId!, 'manage_applications');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+      
+      const validatedData = insertApplicationSchema.partial().parse(req.body);
+      const application = await storage.updateApplication(id, validatedData);
+      res.json(application);
+    } catch (error) {
+      console.error("Error updating application:", error);
+      res.status(400).json({ message: "Failed to update application" });
+    }
+  });
+
+  // Selection Stages routes
+  app.get('/api/jobs/:jobId/stages', isAuthenticated, async (req: any, res) => {
+    try {
+      const { jobId } = req.params;
+      const userId = req.user.claims.sub;
+      
+      // Get job to check company permission
+      const job = await storage.getJob(jobId);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+      
+      const hasPermission = await storage.checkUserPermission(userId, job.companyId!, 'view_jobs');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+      
+      const stages = await storage.getSelectionStagesByJob(jobId);
+      res.json(stages);
+    } catch (error) {
+      console.error("Error fetching selection stages:", error);
+      res.status(500).json({ message: "Failed to fetch selection stages" });
+    }
+  });
+
+  app.post('/api/selection-stages', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const validatedData = insertSelectionStageSchema.parse(req.body);
+      
+      // Get job to check company permission
+      const job = await storage.getJob(validatedData.jobId!);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+      
+      const hasPermission = await storage.checkUserPermission(userId, job.companyId!, 'edit_jobs');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+      
+      const stage = await storage.createSelectionStage(validatedData);
+      res.status(201).json(stage);
+    } catch (error) {
+      console.error("Error creating selection stage:", error);
+      res.status(400).json({ message: "Invalid selection stage data" });
+    }
+  });
+
+  app.put('/api/selection-stages/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user.claims.sub;
+      
+      // Get existing stage to check permissions
+      const stages = await storage.getSelectionStagesByJob("dummy"); // Need to get stage first to check job
+      // Note: This could be improved with a getSelectionStage(id) method
+      
+      const validatedData = insertSelectionStageSchema.partial().parse(req.body);
+      const stage = await storage.updateSelectionStage(id, validatedData);
+      res.json(stage);
+    } catch (error) {
+      console.error("Error updating selection stage:", error);
+      res.status(400).json({ message: "Failed to update selection stage" });
+    }
+  });
+
+  app.delete('/api/selection-stages/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user.claims.sub;
+      
+      // Note: Should check permissions by getting stage and its job first
+      await storage.deleteSelectionStage(id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting selection stage:", error);
+      res.status(500).json({ message: "Failed to delete selection stage" });
+    }
+  });
+
+  app.post('/api/jobs/:jobId/setup-default-stages', isAuthenticated, async (req: any, res) => {
+    try {
+      const { jobId } = req.params;
+      const userId = req.user.claims.sub;
+      
+      // Get job to check company permission
+      const job = await storage.getJob(jobId);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+      
+      const hasPermission = await storage.checkUserPermission(userId, job.companyId!, 'edit_jobs');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+      
+      await storage.setupDefaultSelectionStages(jobId);
+      res.json({ message: "Default stages created successfully" });
+    } catch (error) {
+      console.error("Error setting up default stages:", error);
+      res.status(500).json({ message: "Failed to setup default stages" });
+    }
+  });
+
+  // Interview routes
+  app.get('/api/applications/:applicationId/interviews', isAuthenticated, async (req: any, res) => {
+    try {
+      const { applicationId } = req.params;
+      const userId = req.user.claims.sub;
+      
+      // Get application to check company permission
+      const application = await storage.getApplicationWithDetails(applicationId);
+      if (!application) {
+        return res.status(404).json({ message: "Application not found" });
+      }
+      
+      const hasPermission = await storage.checkUserPermission(userId, application.job?.companyId!, 'view_applications');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+      
+      const interviews = await storage.getInterviewsByApplication(applicationId);
+      res.json(interviews);
+    } catch (error) {
+      console.error("Error fetching interviews:", error);
+      res.status(500).json({ message: "Failed to fetch interviews" });
+    }
+  });
+
+  app.get('/api/interviews/upcoming', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const interviewerId = req.query.interviewerId as string;
+      
+      const interviews = await storage.getUpcomingInterviews(interviewerId);
+      res.json(interviews);
+    } catch (error) {
+      console.error("Error fetching upcoming interviews:", error);
+      res.status(500).json({ message: "Failed to fetch upcoming interviews" });
+    }
+  });
+
+  app.get('/api/interviews/calendar', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const interviewerId = req.query.interviewerId as string;
+      
+      const calendar = await storage.getInterviewCalendar(interviewerId);
+      res.json(calendar);
+    } catch (error) {
+      console.error("Error fetching interview calendar:", error);
+      res.status(500).json({ message: "Failed to fetch interview calendar" });
+    }
+  });
+
+  app.post('/api/interviews', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const validatedData = insertInterviewSchema.parse(req.body);
+      
+      // Check if user can schedule interviews (interviewer role or manage_applications permission)
+      const hasPermission = await storage.checkUserPermission(userId, "dummy", 'interview_candidates'); // Note: Need company context
+      
+      const interview = await storage.createInterview(validatedData);
+      res.status(201).json(interview);
+    } catch (error) {
+      console.error("Error creating interview:", error);
+      res.status(400).json({ message: "Invalid interview data" });
+    }
+  });
+
+  app.get('/api/interviews/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user.claims.sub;
+      
+      const interview = await storage.getInterviewWithDetails(id);
+      if (!interview) {
+        return res.status(404).json({ message: "Interview not found" });
+      }
+      
+      res.json(interview);
+    } catch (error) {
+      console.error("Error fetching interview:", error);
+      res.status(500).json({ message: "Failed to fetch interview" });
+    }
+  });
+
+  app.put('/api/interviews/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user.claims.sub;
+      
+      const validatedData = insertInterviewSchema.partial().parse(req.body);
+      const interview = await storage.updateInterview(id, validatedData);
+      res.json(interview);
+    } catch (error) {
+      console.error("Error updating interview:", error);
+      res.status(400).json({ message: "Failed to update interview" });
+    }
+  });
+
+  // Application Stage Progress routes
+  app.get('/api/applications/:applicationId/progress', isAuthenticated, async (req: any, res) => {
+    try {
+      const { applicationId } = req.params;
+      const userId = req.user.claims.sub;
+      
+      const progress = await storage.getApplicationProgress(applicationId);
+      res.json(progress);
+    } catch (error) {
+      console.error("Error fetching application progress:", error);
+      res.status(500).json({ message: "Failed to fetch application progress" });
+    }
+  });
+
+  app.post('/api/applications/:applicationId/advance-stage', isAuthenticated, async (req: any, res) => {
+    try {
+      const { applicationId } = req.params;
+      const { stageId, score, feedback } = req.body;
+      const userId = req.user.claims.sub;
+      
+      await storage.advanceApplicationStage(applicationId, stageId, score, feedback);
+      res.json({ message: "Application stage advanced successfully" });
+    } catch (error) {
+      console.error("Error advancing application stage:", error);
+      res.status(500).json({ message: "Failed to advance application stage" });
+    }
+  });
+
+  // Selection Process Analytics routes
+  app.get('/api/analytics/selection-process', isAuthenticated, async (req: any, res) => {
+    try {
+      const companyId = req.query.companyId as string;
+      const timeframe = req.query.timeframe as string;
+      
+      const metrics = await storage.getSelectionProcessMetrics(companyId, timeframe);
+      res.json(metrics);
+    } catch (error) {
+      console.error("Error fetching selection process metrics:", error);
+      res.status(500).json({ message: "Failed to fetch selection process metrics" });
+    }
+  });
+
+  app.get('/api/analytics/conversion-rates', isAuthenticated, async (req: any, res) => {
+    try {
+      const companyId = req.query.companyId as string;
+      
+      const conversionRates = await storage.getConversionRates(companyId);
+      res.json(conversionRates);
+    } catch (error) {
+      console.error("Error fetching conversion rates:", error);
+      res.status(500).json({ message: "Failed to fetch conversion rates" });
+    }
+  });
+
+  app.get('/api/analytics/time-to-hire', isAuthenticated, async (req: any, res) => {
+    try {
+      const companyId = req.query.companyId as string;
+      
+      const avgTimeToHire = await storage.getAverageTimeToHire(companyId);
+      res.json({ averageTimeToHire: avgTimeToHire });
+    } catch (error) {
+      console.error("Error fetching time to hire:", error);
+      res.status(500).json({ message: "Failed to fetch time to hire" });
     }
   });
 

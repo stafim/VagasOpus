@@ -4,6 +4,10 @@ import {
   costCenters,
   jobs,
   applications,
+  selectionStages,
+  interviews,
+  interviewCriteria,
+  applicationStageProgress,
   userCompanyRoles,
   rolePermissions,
   type User,
@@ -19,10 +23,22 @@ import {
   type CompanyWithCostCenters,
   type Application,
   type InsertApplication,
+  type ApplicationWithDetails,
+  type SelectionStage,
+  type InsertSelectionStage,
+  type Interview,
+  type InsertInterview,
+  type InterviewWithDetails,
+  type InterviewCriteria,
+  type InsertInterviewCriteria,
+  type ApplicationStageProgress,
+  type InsertApplicationStageProgress,
   type UserCompanyRole,
   type InsertUserCompanyRole,
   type RolePermission,
   type InsertRolePermission,
+  type SelectionProcessMetrics,
+  type InterviewCalendarResponse,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, count, and, ilike, sql } from "drizzle-orm";
@@ -54,8 +70,36 @@ export interface IStorage {
   
   // Application operations
   getApplicationsByJob(jobId: string): Promise<Application[]>;
+  getApplicationWithDetails(id: string): Promise<ApplicationWithDetails | undefined>;
   createApplication(application: InsertApplication): Promise<Application>;
   updateApplicationStatus(id: string, status: string): Promise<Application>;
+  updateApplication(id: string, application: Partial<InsertApplication>): Promise<Application>;
+  
+  // Selection Stages operations
+  getSelectionStagesByJob(jobId: string): Promise<SelectionStage[]>;
+  createSelectionStage(stage: InsertSelectionStage): Promise<SelectionStage>;
+  updateSelectionStage(id: string, stage: Partial<InsertSelectionStage>): Promise<SelectionStage>;
+  deleteSelectionStage(id: string): Promise<void>;
+  setupDefaultSelectionStages(jobId: string): Promise<void>;
+  
+  // Interview operations
+  getInterviewsByApplication(applicationId: string): Promise<InterviewWithDetails[]>;
+  getInterviewWithDetails(id: string): Promise<InterviewWithDetails | undefined>;
+  getUpcomingInterviews(interviewerId?: string): Promise<InterviewWithDetails[]>;
+  createInterview(interview: InsertInterview): Promise<Interview>;
+  updateInterview(id: string, interview: Partial<InsertInterview>): Promise<Interview>;
+  deleteInterview(id: string): Promise<void>;
+  
+  // Interview Criteria operations
+  getInterviewCriteria(interviewId: string): Promise<InterviewCriteria[]>;
+  createInterviewCriteria(criteria: InsertInterviewCriteria): Promise<InterviewCriteria>;
+  updateInterviewCriteria(id: string, criteria: Partial<InsertInterviewCriteria>): Promise<InterviewCriteria>;
+  
+  // Application Stage Progress operations
+  getApplicationProgress(applicationId: string): Promise<ApplicationStageProgress[]>;
+  createStageProgress(progress: InsertApplicationStageProgress): Promise<ApplicationStageProgress>;
+  updateStageProgress(id: string, progress: Partial<InsertApplicationStageProgress>): Promise<ApplicationStageProgress>;
+  advanceApplicationStage(applicationId: string, stageId: string, score: number, feedback?: string): Promise<void>;
   
   // Analytics operations
   getDashboardMetrics(): Promise<{
@@ -67,6 +111,17 @@ export interface IStorage {
   
   getJobsByStatus(): Promise<Array<{ status: string; count: number }>>;
   getApplicationsByMonth(): Promise<Array<{ month: string; count: number }>>;
+  
+  // Selection process analytics
+  getSelectionProcessMetrics(companyId?: string, timeframe?: string): Promise<SelectionProcessMetrics>;
+  getInterviewCalendar(interviewerId?: string): Promise<InterviewCalendarResponse>;
+  getApplicationStatusDistribution(): Promise<Array<{ status: string; count: number }>>;
+  getAverageTimeToHire(companyId?: string): Promise<number>;
+  getConversionRates(companyId?: string): Promise<{
+    applicationToInterview: number;
+    interviewToOffer: number;
+    offerToHire: number;
+  }>;
   
   // Permission operations
   getUserCompanyRoles(userId: string): Promise<UserCompanyRole[]>;
@@ -345,6 +400,296 @@ export class DatabaseStorage implements IStorage {
     return updatedApplication;
   }
 
+  async getApplicationWithDetails(id: string): Promise<ApplicationWithDetails | undefined> {
+    const [application] = await db
+      .select()
+      .from(applications)
+      .where(eq(applications.id, id));
+    
+    if (!application) return undefined;
+
+    // Get job details
+    const job = await this.getJob(application.jobId!);
+    
+    // Get interviews
+    const applicationInterviews = await this.getInterviewsByApplication(id);
+    
+    // Get stage progress
+    const stageProgress = await this.getApplicationProgress(id);
+    
+    return {
+      ...application,
+      job,
+      interviews: applicationInterviews,
+      stageProgress,
+    };
+  }
+
+  async updateApplication(id: string, application: Partial<InsertApplication>): Promise<Application> {
+    const [updatedApplication] = await db
+      .update(applications)
+      .set({ ...application, updatedAt: new Date() })
+      .where(eq(applications.id, id))
+      .returning();
+    return updatedApplication;
+  }
+
+  // Selection Stages operations
+  async getSelectionStagesByJob(jobId: string): Promise<SelectionStage[]> {
+    return await db
+      .select()
+      .from(selectionStages)
+      .where(eq(selectionStages.jobId, jobId))
+      .orderBy(selectionStages.order);
+  }
+
+  async createSelectionStage(stage: InsertSelectionStage): Promise<SelectionStage> {
+    const [newStage] = await db.insert(selectionStages).values(stage).returning();
+    return newStage;
+  }
+
+  async updateSelectionStage(id: string, stage: Partial<InsertSelectionStage>): Promise<SelectionStage> {
+    const [updatedStage] = await db
+      .update(selectionStages)
+      .set(stage)
+      .where(eq(selectionStages.id, id))
+      .returning();
+    return updatedStage;
+  }
+
+  async deleteSelectionStage(id: string): Promise<void> {
+    await db.delete(selectionStages).where(eq(selectionStages.id, id));
+  }
+
+  async setupDefaultSelectionStages(jobId: string): Promise<void> {
+    const defaultStages = [
+      {
+        jobId,
+        name: "Application Review",
+        description: "Initial screening of application documents",
+        order: 1,
+        isRequired: true,
+        passingScore: 60,
+      },
+      {
+        jobId,
+        name: "Phone Screening",
+        description: "Brief phone interview to assess basic fit",
+        order: 2,
+        isRequired: true,
+        passingScore: 70,
+      },
+      {
+        jobId,
+        name: "Technical Interview",
+        description: "Technical skills assessment",
+        order: 3,
+        isRequired: true,
+        passingScore: 75,
+      },
+      {
+        jobId,
+        name: "Final Interview",
+        description: "Final interview with hiring manager",
+        order: 4,
+        isRequired: true,
+        passingScore: 80,
+      },
+    ];
+
+    // Only create if no stages exist
+    const existingStages = await this.getSelectionStagesByJob(jobId);
+    if (existingStages.length === 0) {
+      for (const stage of defaultStages) {
+        await this.createSelectionStage(stage);
+      }
+    }
+  }
+
+  // Interview operations
+  async getInterviewsByApplication(applicationId: string): Promise<InterviewWithDetails[]> {
+    const result = await db
+      .select({
+        interview: interviews,
+        interviewer: users,
+        stage: selectionStages,
+        application: applications,
+      })
+      .from(interviews)
+      .leftJoin(users, eq(interviews.interviewerId, users.id))
+      .leftJoin(selectionStages, eq(interviews.stageId, selectionStages.id))
+      .leftJoin(applications, eq(interviews.applicationId, applications.id))
+      .where(eq(interviews.applicationId, applicationId))
+      .orderBy(interviews.scheduledAt);
+
+    return result.map(row => ({
+      ...row.interview,
+      interviewer: row.interviewer,
+      stage: row.stage,
+      application: row.application,
+      candidate: row.application ? {
+        name: row.application.candidateName,
+        email: row.application.candidateEmail,
+        jobTitle: "Candidate", // Could be enhanced with job title lookup
+      } : undefined,
+    }));
+  }
+
+  async getInterviewWithDetails(id: string): Promise<InterviewWithDetails | undefined> {
+    const result = await db
+      .select({
+        interview: interviews,
+        interviewer: users,
+        stage: selectionStages,
+        application: applications,
+      })
+      .from(interviews)
+      .leftJoin(users, eq(interviews.interviewerId, users.id))
+      .leftJoin(selectionStages, eq(interviews.stageId, selectionStages.id))
+      .leftJoin(applications, eq(interviews.applicationId, applications.id))
+      .where(eq(interviews.id, id));
+
+    if (result.length === 0) return undefined;
+
+    const row = result[0];
+    const criteria = await this.getInterviewCriteria(id);
+
+    return {
+      ...row.interview,
+      interviewer: row.interviewer,
+      stage: row.stage,
+      application: row.application,
+      criteria,
+      candidate: row.application ? {
+        name: row.application.candidateName,
+        email: row.application.candidateEmail,
+        jobTitle: "Candidate",
+      } : undefined,
+    };
+  }
+
+  async getUpcomingInterviews(interviewerId?: string): Promise<InterviewWithDetails[]> {
+    let query = db
+      .select({
+        interview: interviews,
+        interviewer: users,
+        stage: selectionStages,
+        application: applications,
+      })
+      .from(interviews)
+      .leftJoin(users, eq(interviews.interviewerId, users.id))
+      .leftJoin(selectionStages, eq(interviews.stageId, selectionStages.id))
+      .leftJoin(applications, eq(interviews.applicationId, applications.id))
+      .where(and(
+        sql`${interviews.scheduledAt} >= NOW()`,
+        eq(interviews.status, "scheduled")
+      ));
+
+    if (interviewerId) {
+      query = query.where(and(
+        sql`${interviews.scheduledAt} >= NOW()`,
+        eq(interviews.status, "scheduled"),
+        eq(interviews.interviewerId, interviewerId)
+      ));
+    }
+
+    const result = await query.orderBy(interviews.scheduledAt);
+
+    return result.map(row => ({
+      ...row.interview,
+      interviewer: row.interviewer,
+      stage: row.stage,
+      application: row.application,
+      candidate: row.application ? {
+        name: row.application.candidateName,
+        email: row.application.candidateEmail,
+        jobTitle: "Candidate",
+      } : undefined,
+    }));
+  }
+
+  async createInterview(interview: InsertInterview): Promise<Interview> {
+    const [newInterview] = await db.insert(interviews).values(interview).returning();
+    return newInterview;
+  }
+
+  async updateInterview(id: string, interview: Partial<InsertInterview>): Promise<Interview> {
+    const [updatedInterview] = await db
+      .update(interviews)
+      .set({ ...interview, updatedAt: new Date() })
+      .where(eq(interviews.id, id))
+      .returning();
+    return updatedInterview;
+  }
+
+  async deleteInterview(id: string): Promise<void> {
+    await db.delete(interviews).where(eq(interviews.id, id));
+  }
+
+  // Interview Criteria operations
+  async getInterviewCriteria(interviewId: string): Promise<InterviewCriteria[]> {
+    return await db
+      .select()
+      .from(interviewCriteria)
+      .where(eq(interviewCriteria.interviewId, interviewId));
+  }
+
+  async createInterviewCriteria(criteria: InsertInterviewCriteria): Promise<InterviewCriteria> {
+    const [newCriteria] = await db.insert(interviewCriteria).values(criteria).returning();
+    return newCriteria;
+  }
+
+  async updateInterviewCriteria(id: string, criteria: Partial<InsertInterviewCriteria>): Promise<InterviewCriteria> {
+    const [updatedCriteria] = await db
+      .update(interviewCriteria)
+      .set(criteria)
+      .where(eq(interviewCriteria.id, id))
+      .returning();
+    return updatedCriteria;
+  }
+
+  // Application Stage Progress operations
+  async getApplicationProgress(applicationId: string): Promise<ApplicationStageProgress[]> {
+    return await db
+      .select()
+      .from(applicationStageProgress)
+      .where(eq(applicationStageProgress.applicationId, applicationId))
+      .orderBy(applicationStageProgress.createdAt);
+  }
+
+  async createStageProgress(progress: InsertApplicationStageProgress): Promise<ApplicationStageProgress> {
+    const [newProgress] = await db.insert(applicationStageProgress).values(progress).returning();
+    return newProgress;
+  }
+
+  async updateStageProgress(id: string, progress: Partial<InsertApplicationStageProgress>): Promise<ApplicationStageProgress> {
+    const [updatedProgress] = await db
+      .update(applicationStageProgress)
+      .set({ ...progress, updatedAt: new Date() })
+      .where(eq(applicationStageProgress.id, id))
+      .returning();
+    return updatedProgress;
+  }
+
+  async advanceApplicationStage(applicationId: string, stageId: string, score: number, feedback?: string): Promise<void> {
+    // Update current stage progress
+    await this.createStageProgress({
+      applicationId,
+      stageId,
+      status: "completed",
+      score,
+      feedback,
+      completedAt: new Date(),
+    });
+
+    // Update application's current stage and overall score
+    await this.updateApplication(applicationId, {
+      currentStage: stageId,
+      overallScore: score,
+      updatedAt: new Date(),
+    });
+  }
+
   // Analytics operations
   async getDashboardMetrics(): Promise<{
     totalJobs: number;
@@ -393,6 +738,227 @@ export class DatabaseStorage implements IStorage {
       .where(sql`${applications.appliedAt} >= NOW() - INTERVAL '12 months'`)
       .groupBy(sql`TO_CHAR(${applications.appliedAt}, 'YYYY-MM')`)
       .orderBy(sql`TO_CHAR(${applications.appliedAt}, 'YYYY-MM')`);
+  }
+
+  // Selection process analytics
+  async getSelectionProcessMetrics(companyId?: string, timeframe?: string): Promise<SelectionProcessMetrics> {
+    let baseQuery = db.select().from(applications);
+    
+    if (companyId) {
+      baseQuery = baseQuery.leftJoin(jobs, eq(applications.jobId, jobs.id))
+        .where(eq(jobs.companyId, companyId)) as any;
+    }
+
+    const [totalAppsResult] = await db.select({ count: count() }).from(applications);
+    const statusDistribution = await this.getApplicationStatusDistribution();
+    const avgTimeToHire = await this.getAverageTimeToHire(companyId);
+    const conversionRates = await this.getConversionRates(companyId);
+
+    return {
+      totalApplications: totalAppsResult.count,
+      byStatus: statusDistribution,
+      averageTimeToHire: avgTimeToHire,
+      conversionRates,
+    };
+  }
+
+  async getInterviewCalendar(interviewerId?: string): Promise<InterviewCalendarResponse> {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
+
+    // Upcoming interviews (future)
+    const upcomingInterviews = await this.getUpcomingInterviews(interviewerId);
+
+    // Today's interviews
+    let todayQuery = db
+      .select({
+        interview: interviews,
+        interviewer: users,
+        stage: selectionStages,
+        application: applications,
+      })
+      .from(interviews)
+      .leftJoin(users, eq(interviews.interviewerId, users.id))
+      .leftJoin(selectionStages, eq(interviews.stageId, selectionStages.id))
+      .leftJoin(applications, eq(interviews.applicationId, applications.id))
+      .where(and(
+        sql`${interviews.scheduledAt} >= ${todayStart}`,
+        sql`${interviews.scheduledAt} < ${todayEnd}`,
+        eq(interviews.status, "scheduled")
+      ));
+
+    if (interviewerId) {
+      todayQuery = todayQuery.where(and(
+        sql`${interviews.scheduledAt} >= ${todayStart}`,
+        sql`${interviews.scheduledAt} < ${todayEnd}`,
+        eq(interviews.status, "scheduled"),
+        eq(interviews.interviewerId, interviewerId)
+      ));
+    }
+
+    const todayResult = await todayQuery.orderBy(interviews.scheduledAt);
+
+    // Overdue interviews (past scheduled but still marked as scheduled)
+    let overdueQuery = db
+      .select({
+        interview: interviews,
+        interviewer: users,
+        stage: selectionStages,
+        application: applications,
+      })
+      .from(interviews)
+      .leftJoin(users, eq(interviews.interviewerId, users.id))
+      .leftJoin(selectionStages, eq(interviews.stageId, selectionStages.id))
+      .leftJoin(applications, eq(interviews.applicationId, applications.id))
+      .where(and(
+        sql`${interviews.scheduledAt} < NOW()`,
+        eq(interviews.status, "scheduled")
+      ));
+
+    if (interviewerId) {
+      overdueQuery = overdueQuery.where(and(
+        sql`${interviews.scheduledAt} < NOW()`,
+        eq(interviews.status, "scheduled"),
+        eq(interviews.interviewerId, interviewerId)
+      ));
+    }
+
+    const overdueResult = await overdueQuery.orderBy(interviews.scheduledAt);
+
+    const mapToDetails = (rows: any[]) => rows.map(row => ({
+      ...row.interview,
+      interviewer: row.interviewer,
+      stage: row.stage,
+      application: row.application,
+      candidate: row.application ? {
+        name: row.application.candidateName,
+        email: row.application.candidateEmail,
+        jobTitle: "Candidate",
+      } : undefined,
+    }));
+
+    return {
+      upcomingInterviews,
+      todayInterviews: mapToDetails(todayResult),
+      overdueInterviews: mapToDetails(overdueResult),
+    };
+  }
+
+  async getApplicationStatusDistribution(): Promise<Array<{ status: string; count: number }>> {
+    const result = await db
+      .select({
+        status: applications.status,
+        count: count(),
+      })
+      .from(applications)
+      .groupBy(applications.status);
+    
+    return result.map(row => ({
+      status: row.status || '',
+      count: row.count
+    }));
+  }
+
+  async getAverageTimeToHire(companyId?: string): Promise<number> {
+    let query = db
+      .select({
+        appliedAt: applications.appliedAt,
+        updatedAt: applications.updatedAt,
+      })
+      .from(applications);
+
+    if (companyId) {
+      query = query
+        .leftJoin(jobs, eq(applications.jobId, jobs.id))
+        .where(and(
+          eq(applications.status, "hired"),
+          eq(jobs.companyId, companyId)
+        )) as any;
+    } else {
+      query = query.where(eq(applications.status, "hired"));
+    }
+
+    const hiredApplications = await query;
+    
+    if (hiredApplications.length === 0) return 0;
+
+    const totalDays = hiredApplications.reduce((sum, app) => {
+      const daysDiff = Math.floor((app.updatedAt!.getTime() - app.appliedAt!.getTime()) / (1000 * 60 * 60 * 24));
+      return sum + daysDiff;
+    }, 0);
+
+    return Math.round(totalDays / hiredApplications.length);
+  }
+
+  async getConversionRates(companyId?: string): Promise<{
+    applicationToInterview: number;
+    interviewToOffer: number;
+    offerToHire: number;
+  }> {
+    let baseQuery = db.select({ count: count() }).from(applications);
+    
+    if (companyId) {
+      baseQuery = baseQuery
+        .leftJoin(jobs, eq(applications.jobId, jobs.id))
+        .where(eq(jobs.companyId, companyId)) as any;
+    }
+
+    const [totalApps] = await baseQuery;
+    
+    let interviewsQuery = db.select({ count: count() }).from(applications);
+    if (companyId) {
+      interviewsQuery = interviewsQuery
+        .leftJoin(jobs, eq(applications.jobId, jobs.id))
+        .where(and(
+          sql`${applications.status} IN ('interview_scheduled', 'interview_completed', 'final_review', 'approved', 'hired')`,
+          eq(jobs.companyId, companyId)
+        )) as any;
+    } else {
+      interviewsQuery = interviewsQuery
+        .where(sql`${applications.status} IN ('interview_scheduled', 'interview_completed', 'final_review', 'approved', 'hired')`);
+    }
+
+    const [appsWithInterviews] = await interviewsQuery;
+
+    let offersQuery = db.select({ count: count() }).from(applications);
+    if (companyId) {
+      offersQuery = offersQuery
+        .leftJoin(jobs, eq(applications.jobId, jobs.id))
+        .where(and(
+          sql`${applications.status} IN ('approved', 'hired')`,
+          eq(jobs.companyId, companyId)
+        )) as any;
+    } else {
+      offersQuery = offersQuery
+        .where(sql`${applications.status} IN ('approved', 'hired')`);
+    }
+
+    const [appsWithOffers] = await offersQuery;
+
+    let hiredQuery = db.select({ count: count() }).from(applications);
+    if (companyId) {
+      hiredQuery = hiredQuery
+        .leftJoin(jobs, eq(applications.jobId, jobs.id))
+        .where(and(
+          eq(applications.status, "hired"),
+          eq(jobs.companyId, companyId)
+        )) as any;
+    } else {
+      hiredQuery = hiredQuery.where(eq(applications.status, "hired"));
+    }
+
+    const [hiredApps] = await hiredQuery;
+
+    const applicationToInterview = totalApps.count > 0 ? (appsWithInterviews.count / totalApps.count) * 100 : 0;
+    const interviewToOffer = appsWithInterviews.count > 0 ? (appsWithOffers.count / appsWithInterviews.count) * 100 : 0;
+    const offerToHire = appsWithOffers.count > 0 ? (hiredApps.count / appsWithOffers.count) * 100 : 0;
+
+    return {
+      applicationToInterview: Math.round(applicationToInterview * 100) / 100,
+      interviewToOffer: Math.round(interviewToOffer * 100) / 100,
+      offerToHire: Math.round(offerToHire * 100) / 100,
+    };
   }
 
   // Permission operations

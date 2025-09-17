@@ -675,6 +675,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if user has permission to manage roles in the assignment's company
+      if (!assignment.companyId) {
+        return res.status(400).json({ message: "Invalid assignment - missing company ID" });
+      }
       const hasPermission = await storage.checkUserPermission(userId, assignment.companyId, 'manage_permissions');
       if (!hasPermission) {
         return res.status(403).json({ message: "Insufficient permissions" });

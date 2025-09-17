@@ -414,6 +414,7 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
                     <SelectContent>
                       <SelectItem value="draft">Rascunho</SelectItem>
                       <SelectItem value="active">Ativa</SelectItem>
+                      <SelectItem value="published">Publicado</SelectItem>
                       <SelectItem value="paused">Pausada</SelectItem>
                       <SelectItem value="closed">Fechada</SelectItem>
                     </SelectContent>

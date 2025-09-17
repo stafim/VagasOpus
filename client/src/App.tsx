@@ -13,6 +13,7 @@ import Companies from "@/pages/Companies";
 import Users from "@/pages/Users";
 import Performance from "@/pages/Performance";
 import Reports from "@/pages/Reports";
+import Permissions from "@/pages/Permissions";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -28,6 +29,7 @@ function Router() {
           <Route path="/jobs" component={() => <Layout><Jobs /></Layout>} />
           <Route path="/companies" component={() => <Layout><Companies /></Layout>} />
           <Route path="/users" component={() => <Layout><Users /></Layout>} />
+          <Route path="/permissions" component={() => <Layout><Permissions /></Layout>} />
           <Route path="/performance" component={() => <Layout><Performance /></Layout>} />
           <Route path="/reports" component={() => <Layout><Reports /></Layout>} />
         </>

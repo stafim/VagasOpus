@@ -23,6 +23,11 @@ const navigationItems = [
     icon: "fas fa-users",
   },
   {
+    name: "Permissões",
+    href: "/permissions",
+    icon: "fas fa-shield-alt",
+  },
+  {
     name: "Desempenho",
     href: "/performance",
     icon: "fas fa-chart-bar",

@@ -4,6 +4,8 @@ import {
   costCenters,
   jobs,
   applications,
+  userCompanyRoles,
+  rolePermissions,
   type User,
   type UpsertUser,
   type InsertUser,
@@ -17,6 +19,10 @@ import {
   type CompanyWithCostCenters,
   type Application,
   type InsertApplication,
+  type UserCompanyRole,
+  type InsertUserCompanyRole,
+  type RolePermission,
+  type InsertRolePermission,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, count, and, ilike, sql } from "drizzle-orm";
@@ -61,6 +67,17 @@ export interface IStorage {
   
   getJobsByStatus(): Promise<Array<{ status: string; count: number }>>;
   getApplicationsByMonth(): Promise<Array<{ month: string; count: number }>>;
+  
+  // Permission operations
+  getUserCompanyRoles(userId: string): Promise<UserCompanyRole[]>;
+  getUserCompanyRoleById(id: string): Promise<UserCompanyRole | undefined>;
+  getUserPermissions(userId: string, companyId: string): Promise<string[]>;
+  assignUserToCompany(assignment: InsertUserCompanyRole): Promise<UserCompanyRole>;
+  updateUserCompanyRole(id: string, role: string): Promise<UserCompanyRole>;
+  removeUserFromCompany(userId: string, companyId: string): Promise<void>;
+  getRolePermissions(): Promise<RolePermission[]>;
+  setupDefaultRolePermissions(): Promise<void>;
+  checkUserPermission(userId: string, companyId: string, permission: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -376,6 +393,166 @@ export class DatabaseStorage implements IStorage {
       .where(sql`${applications.appliedAt} >= NOW() - INTERVAL '12 months'`)
       .groupBy(sql`TO_CHAR(${applications.appliedAt}, 'YYYY-MM')`)
       .orderBy(sql`TO_CHAR(${applications.appliedAt}, 'YYYY-MM')`);
+  }
+
+  // Permission operations
+  async getUserCompanyRoles(userId: string): Promise<UserCompanyRole[]> {
+    return await db
+      .select()
+      .from(userCompanyRoles)
+      .where(and(eq(userCompanyRoles.userId, userId), eq(userCompanyRoles.isActive, true)))
+      .orderBy(userCompanyRoles.createdAt);
+  }
+
+  async getUserCompanyRoleById(id: string): Promise<UserCompanyRole | undefined> {
+    const [role] = await db
+      .select()
+      .from(userCompanyRoles)
+      .where(eq(userCompanyRoles.id, id));
+    return role;
+  }
+
+  async getUserPermissions(userId: string, companyId: string): Promise<string[]> {
+    // Get user's roles in the company
+    const userRoles = await db
+      .select()
+      .from(userCompanyRoles)
+      .where(
+        and(
+          eq(userCompanyRoles.userId, userId),
+          eq(userCompanyRoles.companyId, companyId),
+          eq(userCompanyRoles.isActive, true)
+        )
+      );
+
+    if (userRoles.length === 0) return [];
+
+    // Get permissions for all user's roles and aggregate them
+    const allPermissions = new Set<string>();
+    
+    for (const userRole of userRoles) {
+      const permissions = await db
+        .select({ permission: rolePermissions.permission })
+        .from(rolePermissions)
+        .where(
+          and(
+            eq(rolePermissions.role, userRole.role),
+            eq(rolePermissions.isGranted, true)
+          )
+        );
+      
+      permissions.forEach(p => allPermissions.add(p.permission));
+    }
+
+    return Array.from(allPermissions);
+  }
+
+  async assignUserToCompany(assignment: InsertUserCompanyRole): Promise<UserCompanyRole> {
+    const [newAssignment] = await db
+      .insert(userCompanyRoles)
+      .values(assignment)
+      .returning();
+    return newAssignment;
+  }
+
+  async updateUserCompanyRole(id: string, role: string): Promise<UserCompanyRole> {
+    const [updatedRole] = await db
+      .update(userCompanyRoles)
+      .set({ role: role as any, updatedAt: new Date() })
+      .where(eq(userCompanyRoles.id, id))
+      .returning();
+    return updatedRole;
+  }
+
+  async removeUserFromCompany(userId: string, companyId: string): Promise<void> {
+    await db
+      .update(userCompanyRoles)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(
+        and(
+          eq(userCompanyRoles.userId, userId),
+          eq(userCompanyRoles.companyId, companyId)
+        )
+      );
+  }
+
+  async getRolePermissions(): Promise<RolePermission[]> {
+    return await db.select().from(rolePermissions).orderBy(rolePermissions.role);
+  }
+
+  async setupDefaultRolePermissions(): Promise<void> {
+    // Clear existing permissions first to ensure idempotency
+    await db.delete(rolePermissions);
+    
+    // Setup default permissions for different roles
+    const defaultPermissions = [
+      // Admin permissions - full access
+      { role: "admin", permission: "create_jobs", isGranted: true },
+      { role: "admin", permission: "edit_jobs", isGranted: true },
+      { role: "admin", permission: "delete_jobs", isGranted: true },
+      { role: "admin", permission: "view_jobs", isGranted: true },
+      { role: "admin", permission: "create_companies", isGranted: true },
+      { role: "admin", permission: "edit_companies", isGranted: true },
+      { role: "admin", permission: "delete_companies", isGranted: true },
+      { role: "admin", permission: "view_companies", isGranted: true },
+      { role: "admin", permission: "manage_cost_centers", isGranted: true },
+      { role: "admin", permission: "view_applications", isGranted: true },
+      { role: "admin", permission: "manage_applications", isGranted: true },
+      { role: "admin", permission: "interview_candidates", isGranted: true },
+      { role: "admin", permission: "hire_candidates", isGranted: true },
+      { role: "admin", permission: "view_reports", isGranted: true },
+      { role: "admin", permission: "export_data", isGranted: true },
+      { role: "admin", permission: "manage_users", isGranted: true },
+      { role: "admin", permission: "manage_permissions", isGranted: true },
+
+      // HR Manager permissions
+      { role: "hr_manager", permission: "create_jobs", isGranted: true },
+      { role: "hr_manager", permission: "edit_jobs", isGranted: true },
+      { role: "hr_manager", permission: "delete_jobs", isGranted: true },
+      { role: "hr_manager", permission: "view_jobs", isGranted: true },
+      { role: "hr_manager", permission: "view_companies", isGranted: true },
+      { role: "hr_manager", permission: "manage_cost_centers", isGranted: true },
+      { role: "hr_manager", permission: "view_applications", isGranted: true },
+      { role: "hr_manager", permission: "manage_applications", isGranted: true },
+      { role: "hr_manager", permission: "interview_candidates", isGranted: true },
+      { role: "hr_manager", permission: "hire_candidates", isGranted: true },
+      { role: "hr_manager", permission: "view_reports", isGranted: true },
+      { role: "hr_manager", permission: "export_data", isGranted: true },
+
+      // Recruiter permissions
+      { role: "recruiter", permission: "create_jobs", isGranted: true },
+      { role: "recruiter", permission: "edit_jobs", isGranted: true },
+      { role: "recruiter", permission: "view_jobs", isGranted: true },
+      { role: "recruiter", permission: "view_companies", isGranted: true },
+      { role: "recruiter", permission: "view_applications", isGranted: true },
+      { role: "recruiter", permission: "manage_applications", isGranted: true },
+      { role: "recruiter", permission: "interview_candidates", isGranted: true },
+      { role: "recruiter", permission: "view_reports", isGranted: true },
+
+      // Interviewer permissions
+      { role: "interviewer", permission: "view_jobs", isGranted: true },
+      { role: "interviewer", permission: "view_companies", isGranted: true },
+      { role: "interviewer", permission: "view_applications", isGranted: true },
+      { role: "interviewer", permission: "interview_candidates", isGranted: true },
+
+      // Viewer permissions - read only
+      { role: "viewer", permission: "view_jobs", isGranted: true },
+      { role: "viewer", permission: "view_companies", isGranted: true },
+      { role: "viewer", permission: "view_applications", isGranted: true },
+      { role: "viewer", permission: "view_reports", isGranted: true },
+    ];
+
+    // Insert permissions in batch
+    if (defaultPermissions.length > 0) {
+      await db
+        .insert(rolePermissions)
+        .values(defaultPermissions as any);
+    }
+  }
+
+  async checkUserPermission(userId: string, companyId: string, permission: string): Promise<boolean> {
+    const userPermissions = await this.getUserPermissions(userId, companyId);
+    return userPermissions.includes(permission);
   }
 }
 

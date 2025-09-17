@@ -6,8 +6,34 @@ import {
   insertCompanySchema, 
   insertCostCenterSchema, 
   insertJobSchema, 
-  insertApplicationSchema 
+  insertApplicationSchema,
+  insertUserCompanyRoleSchema 
 } from "@shared/schema";
+import { z } from "zod";
+
+// Authorization middleware
+const requirePermission = (permission: string) => {
+  return async (req: any, res: any, next: any) => {
+    try {
+      const userId = req.user.claims.sub;
+      const companyId = req.body.companyId || req.params.companyId;
+      
+      if (!companyId) {
+        return res.status(400).json({ message: "Company ID required" });
+      }
+      
+      const hasPermission = await storage.checkUserPermission(userId, companyId, permission);
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+      
+      next();
+    } catch (error) {
+      console.error("Authorization error:", error);
+      res.status(500).json({ message: "Authorization check failed" });
+    }
+  };
+};
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -81,7 +107,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/companies', isAuthenticated, async (req, res) => {
+  app.post('/api/companies', isAuthenticated, requirePermission('create_companies'), async (req, res) => {
     try {
       const validatedData = insertCompanySchema.parse(req.body);
       const company = await storage.createCompany(validatedData);
@@ -95,6 +121,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/companies/:id', isAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
+      const userId = (req as any).user.claims.sub;
+      
+      // Check if user has permission to edit this company
+      const hasPermission = await storage.checkUserPermission(userId, id, 'edit_companies');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+      
       const validatedData = insertCompanySchema.partial().parse(req.body);
       const company = await storage.updateCompany(id, validatedData);
       res.json(company);
@@ -107,6 +141,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/companies/:id', isAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
+      const userId = (req as any).user.claims.sub;
+      
+      // Check if user has permission to delete this company
+      const hasPermission = await storage.checkUserPermission(userId, id, 'delete_companies');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+      
       await storage.deleteCompany(id);
       res.status(204).send();
     } catch (error) {
@@ -260,6 +302,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating application status:", error);
       res.status(500).json({ message: "Failed to update application status" });
+    }
+  });
+
+  // Permission routes
+  app.get('/api/permissions/user-roles', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const roles = await storage.getUserCompanyRoles(userId);
+      res.json(roles);
+    } catch (error) {
+      console.error("Error fetching user roles:", error);
+      res.status(500).json({ message: "Failed to fetch user roles" });
+    }
+  });
+
+  app.get('/api/permissions/:companyId', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { companyId } = req.params;
+      const permissions = await storage.getUserPermissions(userId, companyId);
+      res.json(permissions);
+    } catch (error) {
+      console.error("Error fetching user permissions:", error);
+      res.status(500).json({ message: "Failed to fetch user permissions" });
+    }
+  });
+
+  app.post('/api/permissions/assign', isAuthenticated, requirePermission('manage_permissions'), async (req, res) => {
+    try {
+      const validatedData = insertUserCompanyRoleSchema.parse(req.body);
+      const assignment = await storage.assignUserToCompany(validatedData);
+      res.status(201).json(assignment);
+    } catch (error) {
+      console.error("Error assigning user to company:", error);
+      res.status(400).json({ message: "Invalid assignment data" });
+    }
+  });
+
+  app.put('/api/permissions/:id/role', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { role } = req.body;
+      const userId = (req as any).user.claims.sub;
+      
+      // First get the assignment to verify company ownership
+      const assignment = await storage.getUserCompanyRoleById(id);
+      if (!assignment) {
+        return res.status(404).json({ message: "Assignment not found" });
+      }
+      
+      // Check if user has permission to manage roles in the assignment's company
+      const hasPermission = await storage.checkUserPermission(userId, assignment.companyId, 'manage_permissions');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+      
+      // Validate role value
+      const roleSchema = z.enum(['admin', 'hr_manager', 'recruiter', 'interviewer', 'viewer']);
+      const validatedRole = roleSchema.parse(role);
+      
+      const updatedRole = await storage.updateUserCompanyRole(id, validatedRole);
+      res.json(updatedRole);
+    } catch (error) {
+      console.error("Error updating user role:", error);
+      res.status(500).json({ message: "Failed to update user role" });
+    }
+  });
+
+  app.delete('/api/permissions/:userId/:companyId', isAuthenticated, requirePermission('manage_permissions'), async (req, res) => {
+    try {
+      const { userId, companyId } = req.params;
+      await storage.removeUserFromCompany(userId, companyId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error removing user from company:", error);
+      res.status(500).json({ message: "Failed to remove user from company" });
+    }
+  });
+
+  app.get('/api/permissions/roles/permissions', isAuthenticated, async (req, res) => {
+    try {
+      const permissions = await storage.getRolePermissions();
+      res.json(permissions);
+    } catch (error) {
+      console.error("Error fetching role permissions:", error);
+      res.status(500).json({ message: "Failed to fetch role permissions" });
+    }
+  });
+
+  app.post('/api/permissions/setup-defaults', isAuthenticated, async (req: any, res) => {
+    try {
+      // Only allow system admins to setup defaults (users with admin role globally)
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Only system administrators can setup default permissions" });
+      }
+      
+      await storage.setupDefaultRolePermissions();
+      res.json({ message: "Default permissions setup completed" });
+    } catch (error) {
+      console.error("Error setting up default permissions:", error);
+      res.status(500).json({ message: "Failed to setup default permissions" });
     }
   });
 

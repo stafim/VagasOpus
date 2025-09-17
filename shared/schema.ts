@@ -78,6 +78,35 @@ export const contractTypeEnum = pgEnum("contract_type", [
   "temporario"
 ]);
 
+// Permission system enums
+export const roleTypeEnum = pgEnum("role_type", [
+  "admin",
+  "hr_manager", 
+  "recruiter",
+  "interviewer",
+  "viewer"
+]);
+
+export const permissionTypeEnum = pgEnum("permission_type", [
+  "create_jobs",
+  "edit_jobs", 
+  "delete_jobs",
+  "view_jobs",
+  "create_companies",
+  "edit_companies",
+  "delete_companies",
+  "view_companies",
+  "manage_cost_centers",
+  "view_applications",
+  "manage_applications",
+  "interview_candidates",
+  "hire_candidates",
+  "view_reports",
+  "export_data",
+  "manage_users",
+  "manage_permissions"
+]);
+
 // Jobs table
 export const jobs = pgTable("jobs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -96,6 +125,26 @@ export const jobs = pgTable("jobs", {
   expiresAt: timestamp("expires_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// User-Company-Role assignments table
+export const userCompanyRoles = pgTable("user_company_roles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id),
+  companyId: varchar("company_id").references(() => companies.id),
+  role: roleTypeEnum("role").notNull(),
+  costCenterId: varchar("cost_center_id").references(() => costCenters.id), // Optional: restrict to specific cost center
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Role permissions mapping table
+export const rolePermissions = pgTable("role_permissions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  role: roleTypeEnum("role").notNull(),
+  permission: permissionTypeEnum("permission").notNull(),
+  isGranted: boolean("is_granted").default(true),
 });
 
 // Applications table
@@ -148,6 +197,26 @@ export const applicationsRelations = relations(applications, ({ one }) => ({
   }),
 }));
 
+export const userCompanyRolesRelations = relations(userCompanyRoles, ({ one }) => ({
+  user: one(users, {
+    fields: [userCompanyRoles.userId],
+    references: [users.id],
+  }),
+  company: one(companies, {
+    fields: [userCompanyRoles.companyId],
+    references: [companies.id],
+  }),
+  costCenter: one(costCenters, {
+    fields: [userCompanyRoles.costCenterId],
+    references: [costCenters.id],
+  }),
+}));
+
+export const usersRelations = relations(users, ({ many }) => ({
+  companyRoles: many(userCompanyRoles),
+  createdJobs: many(jobs),
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -178,6 +247,16 @@ export const insertApplicationSchema = createInsertSchema(applications).omit({
   appliedAt: true,
 });
 
+export const insertUserCompanyRoleSchema = createInsertSchema(userCompanyRoles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertRolePermissionSchema = createInsertSchema(rolePermissions).omit({
+  id: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -194,6 +273,12 @@ export type InsertJob = z.infer<typeof insertJobSchema>;
 
 export type Application = typeof applications.$inferSelect;
 export type InsertApplication = z.infer<typeof insertApplicationSchema>;
+
+export type UserCompanyRole = typeof userCompanyRoles.$inferSelect;
+export type InsertUserCompanyRole = z.infer<typeof insertUserCompanyRoleSchema>;
+
+export type RolePermission = typeof rolePermissions.$inferSelect;
+export type InsertRolePermission = z.infer<typeof insertRolePermissionSchema>;
 
 // Extended types for joined queries
 export type JobWithDetails = Job & {

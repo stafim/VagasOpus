@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 
 interface TopBarProps {
   title?: string;
@@ -14,6 +17,31 @@ export default function TopBar({
   onCreateClick,
   createButtonText = "Nova Vaga",
 }: TopBarProps) {
+  const { toast } = useToast();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await apiRequest("/api/auth/logout", "POST");
+      
+      toast({
+        title: "Logout realizado com sucesso",
+        description: "Até logo!",
+      });
+
+      // Invalidate auth query to update UI
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+    } catch (error: any) {
+      toast({
+        title: "Erro no logout",
+        description: error.message || "Tente novamente",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
   return (
     <header className="bg-card border-b border-border px-4 py-4 sm:px-6 lg:px-8">
       <div className="flex items-center justify-between">
@@ -41,6 +69,15 @@ export default function TopBar({
               {createButtonText}
             </Button>
           )}
+          <Button 
+            variant="outline" 
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            data-testid="button-logout"
+          >
+            <i className="fas fa-sign-out-alt mr-2"></i>
+            {isLoggingOut ? "Saindo..." : "Sair"}
+          </Button>
         </div>
       </div>
     </header>

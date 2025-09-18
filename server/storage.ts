@@ -48,6 +48,11 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   
+  // Authentication operations (for local auth)
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUser(user: { email: string; passwordHash: string; firstName?: string; lastName?: string }): Promise<User>;
+  updateUserPassword(id: string, passwordHash: string): Promise<User>;
+  
   // Company operations
   getCompanies(): Promise<CompanyWithCostCenters[]>;
   getCompany(id: string): Promise<CompanyWithCostCenters | undefined>;
@@ -155,6 +160,29 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return user;
+  }
+
+  // Authentication operations (for local auth)
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async createUser(user: { email: string; passwordHash: string; firstName?: string; lastName?: string }): Promise<User> {
+    const [newUser] = await db
+      .insert(users)
+      .values(user)
+      .returning();
+    return newUser;
+  }
+
+  async updateUserPassword(id: string, passwordHash: string): Promise<User> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({ passwordHash, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return updatedUser;
   }
 
   // Company operations

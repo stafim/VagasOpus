@@ -100,13 +100,13 @@ export async function setupAuth(app: Express) {
     passport.use(strategy);
   }
 
-  // Register strategy for localhost development
+  // Register strategy for localhost development using the actual Replit domain
   const localhostStrategy = new Strategy(
     {
       name: `replitauth:localhost`,
       config,
       scope: "openid email profile offline_access",
-      callbackURL: `http://localhost:5000/api/callback`,
+      callbackURL: `https://${process.env.REPLIT_DOMAINS}/api/callback`,
     },
     verify,
   );

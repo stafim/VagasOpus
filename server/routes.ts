@@ -44,7 +44,7 @@ const requirePermission = (permission: string) => {
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
+  // Auth middleware - setup simple auth to provide authentication
   setupSimpleAuth(app);
 
   // Dashboard metrics
@@ -117,7 +117,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/companies/:id', isAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
-      const userId = (req as any).user.claims.sub;
+      const userId = (req.session as any).user.id;
       
       // Check if user has permission to edit this company
       const hasPermission = await storage.checkUserPermission(userId, id, 'edit_companies');
@@ -137,7 +137,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/companies/:id', isAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
-      const userId = (req as any).user.claims.sub;
+      const userId = (req.session as any).user.id;
       
       // Check if user has permission to delete this company
       const hasPermission = await storage.checkUserPermission(userId, id, 'delete_companies');
@@ -230,7 +230,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/jobs', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.session as any).user.id;
       const validatedData = insertJobSchema.parse({
         ...req.body,
         createdBy: userId,
@@ -305,7 +305,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/applications/:id/details', isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = (req.session as any).user.id;
       
       const application = await storage.getApplicationWithDetails(id);
       if (!application) {
@@ -328,7 +328,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/applications/:id', isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = (req.session as any).user.id;
       
       // Get application to check company permission
       const existingApp = await storage.getApplicationWithDetails(id);
@@ -354,7 +354,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/jobs/:jobId/stages', isAuthenticated, async (req: any, res) => {
     try {
       const { jobId } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = (req.session as any).user.id;
       
       // Get job to check company permission
       const job = await storage.getJob(jobId);
@@ -377,7 +377,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/selection-stages', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.session as any).user.id;
       const validatedData = insertSelectionStageSchema.parse(req.body);
       
       // Get job to check company permission
@@ -402,7 +402,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/selection-stages/:id', isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = (req.session as any).user.id;
       
       // Get existing stage to check permissions
       const stages = await storage.getSelectionStagesByJob("dummy"); // Need to get stage first to check job
@@ -420,7 +420,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/selection-stages/:id', isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = (req.session as any).user.id;
       
       // Note: Should check permissions by getting stage and its job first
       await storage.deleteSelectionStage(id);
@@ -434,7 +434,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/jobs/:jobId/setup-default-stages', isAuthenticated, async (req: any, res) => {
     try {
       const { jobId } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = (req.session as any).user.id;
       
       // Get job to check company permission
       const job = await storage.getJob(jobId);
@@ -459,7 +459,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/applications/:applicationId/interviews', isAuthenticated, async (req: any, res) => {
     try {
       const { applicationId } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = (req.session as any).user.id;
       
       // Get application to check company permission
       const application = await storage.getApplicationWithDetails(applicationId);
@@ -482,7 +482,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/interviews/upcoming', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.session as any).user.id;
       const interviewerId = req.query.interviewerId as string;
       
       const interviews = await storage.getUpcomingInterviews(interviewerId);
@@ -495,7 +495,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/interviews/calendar', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.session as any).user.id;
       const interviewerId = req.query.interviewerId as string;
       
       const calendar = await storage.getInterviewCalendar(interviewerId);
@@ -508,7 +508,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/interviews', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.session as any).user.id;
       const validatedData = insertInterviewSchema.parse(req.body);
       
       // Check if user can schedule interviews (interviewer role or manage_applications permission)
@@ -525,7 +525,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/interviews/:id', isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = (req.session as any).user.id;
       
       const interview = await storage.getInterviewWithDetails(id);
       if (!interview) {
@@ -542,7 +542,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/interviews/:id', isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = (req.session as any).user.id;
       
       const validatedData = insertInterviewSchema.partial().parse(req.body);
       const interview = await storage.updateInterview(id, validatedData);
@@ -557,7 +557,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/applications/:applicationId/progress', isAuthenticated, async (req: any, res) => {
     try {
       const { applicationId } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = (req.session as any).user.id;
       
       const progress = await storage.getApplicationProgress(applicationId);
       res.json(progress);
@@ -571,7 +571,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { applicationId } = req.params;
       const { stageId, score, feedback } = req.body;
-      const userId = req.user.claims.sub;
+      const userId = (req.session as any).user.id;
       
       await storage.advanceApplicationStage(applicationId, stageId, score, feedback);
       res.json({ message: "Application stage advanced successfully" });
@@ -622,7 +622,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Permission routes
   app.get('/api/permissions/user-roles', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.session as any).user.id;
       const roles = await storage.getUserCompanyRoles(userId);
       res.json(roles);
     } catch (error) {
@@ -633,7 +633,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/permissions/:companyId', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.session as any).user.id;
       const { companyId } = req.params;
       const permissions = await storage.getUserPermissions(userId, companyId);
       res.json(permissions);
@@ -658,7 +658,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const { role } = req.body;
-      const userId = (req as any).user.claims.sub;
+      const userId = (req.session as any).user.id;
       
       // First get the assignment to verify company ownership
       const assignment = await storage.getUserCompanyRoleById(id);
@@ -711,7 +711,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/permissions/setup-defaults', isAuthenticated, async (req: any, res) => {
     try {
       // Only allow system admins to setup defaults (users with admin role globally)
-      const userId = req.user.claims.sub;
+      const userId = (req.session as any).user.id;
       const user = await storage.getUser(userId);
       if (user?.role !== 'admin') {
         return res.status(403).json({ message: "Only system administrators can setup default permissions" });

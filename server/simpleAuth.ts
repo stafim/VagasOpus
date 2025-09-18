@@ -9,7 +9,7 @@ const SALT_ROUNDS = 10;
 // Session configuration for simple auth
 export function getSessionForSimpleAuth() {
   return session({
-    secret: process.env.SESSION_SECRET!,
+    secret: process.env.SESSION_SECRET || 'default-dev-secret-change-in-production',
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -55,6 +55,15 @@ async function verifyPassword(password: string, hash: string): Promise<boolean> 
 export function setupSimpleAuth(app: Express) {
   // Use session middleware
   app.use(getSessionForSimpleAuth());
+
+  // Override old Replit Auth routes to prevent conflicts
+  app.get('/api/login', (req, res) => {
+    res.redirect('/');
+  });
+  
+  app.get('/api/logout', (req, res) => {
+    res.redirect('/');
+  });
 
   // Register endpoint
   app.post('/api/auth/register', async (req, res) => {

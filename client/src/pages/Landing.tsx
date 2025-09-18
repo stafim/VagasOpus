@@ -53,7 +53,7 @@ export default function Landing() {
   const handleLogin = async (data: LoginForm) => {
     setIsSubmitting(true);
     try {
-      await apiRequest("/api/auth/login", "POST", data);
+      await apiRequest("POST", "/api/auth/login", data);
 
       toast({
         title: "Login realizado com sucesso",
@@ -76,7 +76,7 @@ export default function Landing() {
   const handleRegister = async (data: RegisterForm) => {
     setIsSubmitting(true);
     try {
-      await apiRequest("/api/auth/register", "POST", data);
+      await apiRequest("POST", "/api/auth/register", data);
 
       toast({
         title: "Conta criada com sucesso",

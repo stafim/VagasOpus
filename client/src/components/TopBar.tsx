@@ -23,7 +23,7 @@ export default function TopBar({
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
-      await apiRequest("/api/auth/logout", "POST");
+      await apiRequest("POST", "/api/auth/logout");
       
       toast({
         title: "Logout realizado com sucesso",

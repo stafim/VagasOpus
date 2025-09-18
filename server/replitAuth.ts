@@ -40,6 +40,7 @@ export function getSession() {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       maxAge: sessionTtl,
+      sameSite: 'lax',
     },
   });
 }
@@ -84,6 +85,7 @@ export async function setupAuth(app: Express) {
     verified(null, user);
   };
 
+  // Register strategies for configured domains
   for (const domain of process.env
     .REPLIT_DOMAINS!.split(",")) {
     const strategy = new Strategy(
@@ -97,6 +99,18 @@ export async function setupAuth(app: Express) {
     );
     passport.use(strategy);
   }
+
+  // Register strategy for localhost development
+  const localhostStrategy = new Strategy(
+    {
+      name: `replitauth:localhost`,
+      config,
+      scope: "openid email profile offline_access",
+      callbackURL: `http://localhost:5000/api/callback`,
+    },
+    verify,
+  );
+  passport.use(localhostStrategy);
 
   passport.serializeUser((user: Express.User, cb) => cb(null, user));
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));

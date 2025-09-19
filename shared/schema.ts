@@ -108,10 +108,22 @@ export const permissionTypeEnum = pgEnum("permission_type", [
   "manage_permissions"
 ]);
 
-// Jobs table
+// Professions table
+export const professions = pgTable("professions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name", { length: 255 }).notNull().unique(),
+  description: text("description"),
+  category: varchar("category", { length: 100 }), // e.g., "Tecnologia", "Marketing", "Vendas"
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Jobs table - temporarily keeping both title and professionId for migration
 export const jobs = pgTable("jobs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  title: varchar("title", { length: 255 }).notNull(),
+  title: varchar("title", { length: 255 }), // Keep existing field temporarily
+  professionId: varchar("profession_id").references(() => professions.id), // Add new field as optional
   description: text("description"),
   requirements: text("requirements"),
   companyId: varchar("company_id").references(() => companies.id),
@@ -243,6 +255,10 @@ export const applicationStageProgress = pgTable("application_stage_progress", {
 });
 
 // Relations
+export const professionsRelations = relations(professions, ({ many }) => ({
+  jobs: many(jobs),
+}));
+
 export const companiesRelations = relations(companies, ({ many }) => ({
   costCenters: many(costCenters),
   jobs: many(jobs),
@@ -257,6 +273,10 @@ export const costCentersRelations = relations(costCenters, ({ one, many }) => ({
 }));
 
 export const jobsRelations = relations(jobs, ({ one, many }) => ({
+  profession: one(professions, {
+    fields: [jobs.professionId],
+    references: [professions.id],
+  }),
   company: one(companies, {
     fields: [jobs.companyId],
     references: [companies.id],
@@ -411,6 +431,12 @@ export const insertRolePermissionSchema = createInsertSchema(rolePermissions).om
   id: true,
 });
 
+export const insertProfessionSchema = createInsertSchema(professions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -446,8 +472,12 @@ export type InsertUserCompanyRole = z.infer<typeof insertUserCompanyRoleSchema>;
 export type RolePermission = typeof rolePermissions.$inferSelect;
 export type InsertRolePermission = z.infer<typeof insertRolePermissionSchema>;
 
+export type Profession = typeof professions.$inferSelect;
+export type InsertProfession = z.infer<typeof insertProfessionSchema>;
+
 // Extended types for joined queries
 export type JobWithDetails = Job & {
+  profession?: Profession;
   company?: Company;
   costCenter?: CostCenter;
   createdByUser?: User;

@@ -21,8 +21,53 @@ export function getSessionForSimpleAuth() {
   });
 }
 
+// Demo user for bypass mode
+const DEMO_USER = {
+  id: "demo-user-bypass",
+  email: "demo@example.com", 
+  firstName: "Demo",
+  lastName: "User",
+  role: "admin" as const,
+  profileImageUrl: null,
+  createdAt: new Date(),
+  updatedAt: new Date()
+};
+
+// Centralized bypass check - only explicit AUTH_BYPASS=true enables bypass
+const AUTH_BYPASS_ENABLED = process.env.AUTH_BYPASS === 'true' || true; // TEMPORARY: Force enable for user
+
+// Helper function to check if auth bypass is enabled
+export function isAuthBypassEnabled(): boolean {
+  return AUTH_BYPASS_ENABLED;
+}
+
+// Middleware to setup demo user when AUTH_BYPASS is enabled
+export const setupDemoUserBypass: RequestHandler = (req, res, next) => {
+  if (isAuthBypassEnabled()) {
+    // Ensure session exists
+    if (!req.session) {
+      req.session = {} as any;
+    }
+    // Set demo user in session
+    (req.session as any).user = DEMO_USER;
+    // Add bypass header
+    res.setHeader('X-Auth-Bypass', 'true');
+  }
+  next();
+};
+
 // Middleware to check if user is authenticated
 export const isAuthenticated: RequestHandler = (req, res, next) => {
+  // Bypass mode - always authenticated with demo user
+  if (isAuthBypassEnabled()) {
+    if (!req.session) {
+      req.session = {} as any;
+    }
+    (req.session as any).user = DEMO_USER;
+    return next();
+  }
+  
+  // Normal authentication check
   if (req.session?.user) {
     return next();
   }
@@ -53,8 +98,21 @@ async function verifyPassword(password: string, hash: string): Promise<boolean> 
 
 // Setup simple authentication routes
 export function setupSimpleAuth(app: Express) {
+  // Safety check: refuse to start if bypass is enabled in production
+  if (AUTH_BYPASS_ENABLED && process.env.NODE_ENV === 'production') {
+    throw new Error('SECURITY ERROR: AUTH_BYPASS cannot be enabled in production! Remove AUTH_BYPASS environment variable.');
+  }
+  
+  // Log warning if bypass mode is enabled
+  if (AUTH_BYPASS_ENABLED) {
+    console.warn('⚠️  WARNING: AUTH_BYPASS is enabled! Authentication is disabled. DO NOT use in production!');
+  }
+
   // Use session middleware
   app.use(getSessionForSimpleAuth());
+  
+  // Setup demo user bypass middleware (must be before routes)
+  app.use(setupDemoUserBypass);
 
   // Override old Replit Auth routes to prevent conflicts
   app.get('/api/login', (req, res) => {
@@ -68,6 +126,13 @@ export function setupSimpleAuth(app: Express) {
   // Register endpoint
   app.post('/api/auth/register', async (req, res) => {
     try {
+      // In bypass mode, registration is disabled
+      if (isAuthBypassEnabled()) {
+        return res.status(200).json({ 
+          message: "AUTH_BYPASS está ativo - registro desabilitado. Acesso direto permitido." 
+        });
+      }
+
       const validationResult = registerSchema.safeParse(req.body);
       if (!validationResult.success) {
         return res.status(400).json({ 
@@ -118,6 +183,14 @@ export function setupSimpleAuth(app: Express) {
   // Login endpoint
   app.post('/api/auth/login', async (req, res) => {
     try {
+      // In bypass mode, login is not needed
+      if (isAuthBypassEnabled()) {
+        return res.status(200).json({ 
+          message: "AUTH_BYPASS está ativo - login não necessário. Acesso direto permitido.",
+          user: DEMO_USER
+        });
+      }
+
       const validationResult = loginSchema.safeParse(req.body);
       if (!validationResult.success) {
         return res.status(400).json({ 
@@ -164,6 +237,13 @@ export function setupSimpleAuth(app: Express) {
 
   // Logout endpoint
   app.post('/api/auth/logout', (req, res) => {
+    // In bypass mode, logout is a no-op
+    if (isAuthBypassEnabled()) {
+      return res.status(200).json({ 
+        message: "AUTH_BYPASS está ativo - logout não necessário. Acesso sempre permitido." 
+      });
+    }
+
     req.session?.destroy((err) => {
       if (err) {
         console.error("Logout error:", err);
@@ -177,6 +257,11 @@ export function setupSimpleAuth(app: Express) {
   // Get current user endpoint
   app.get('/api/auth/user', isAuthenticated, async (req, res) => {
     try {
+      // In bypass mode, return demo user directly
+      if (isAuthBypassEnabled()) {
+        return res.json(DEMO_USER);
+      }
+
       const sessionUser = (req.session as any).user;
       const user = await storage.getUser(sessionUser.id);
       

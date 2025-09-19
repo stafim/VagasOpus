@@ -2,6 +2,8 @@
 
 This is a job management system (VagasPro) built with React and Express, designed for companies to manage job postings, applications, and recruitment workflows. The application provides a comprehensive dashboard for tracking hiring metrics, managing companies and cost centers, and analyzing recruitment performance through various reports and visualizations.
 
+**CURRENT STATE**: Authentication bypass mode is enabled for direct access without login/password requirements. Users can access the full application immediately without creating accounts.
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
@@ -30,10 +32,11 @@ Preferred communication style: Simple, everyday language.
 - **Connection**: Neon serverless client with WebSocket support for serverless environments
 
 ## Authentication & Authorization
-- **Provider**: Replit Auth (OpenID Connect)
-- **Session Management**: Express sessions with PostgreSQL session store (connect-pg-simple)
-- **Strategy**: Passport.js with OpenID Connect strategy
-- **Security**: HTTP-only cookies, secure sessions, and CSRF protection
+- **CURRENT**: Simple local authentication system with bypass mode enabled
+- **Bypass Mode**: AUTH_BYPASS is active - provides immediate access as demo admin user
+- **Session Management**: Express sessions with in-memory store for development
+- **Security**: BCrypt password hashing, HTTP-only cookies, secure sessions
+- **Note**: Authentication can be re-enabled by removing the temporary bypass flag
 
 ## Data Layer Design
 - **Storage Pattern**: Repository pattern with IStorage interface

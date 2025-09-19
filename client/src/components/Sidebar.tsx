@@ -11,7 +11,8 @@ import {
   TrendingUp, 
   FileText,
   Settings,
-  HelpCircle
+  HelpCircle,
+  LogOut
 } from "lucide-react";
 
 const navigationItems = [
@@ -186,7 +187,7 @@ export default function Sidebar() {
               data-testid="button-logout"
               title="Sair do sistema"
             >
-              <i className="fas fa-sign-out-alt text-sm" />
+              <LogOut className="h-4 w-4" />
             </a>
           </div>
         </div>

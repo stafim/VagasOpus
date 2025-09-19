@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -30,6 +31,15 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { 
+  Briefcase, 
+  CheckCircle, 
+  UserPlus, 
+  Building2, 
+  Search,
+  Eye,
+  Calendar
+} from "lucide-react";
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
 
@@ -101,31 +111,37 @@ export default function Dashboard() {
               <MetricsCard
                 title="Vagas Totais"
                 value={metrics?.totalJobs || 0}
-                icon="fas fa-briefcase"
+                icon={Briefcase}
+                iconBgColor="bg-primary/10"
+                iconColor="text-primary"
+                description="Todas as vagas cadastradas"
                 trend={{ value: "+12%", isPositive: true }}
               />
               <MetricsCard
                 title="Vagas Ativas"
                 value={metrics?.activeJobs || 0}
-                icon="fas fa-check-circle"
-                iconBgColor="bg-green-100"
-                iconColor="text-green-600"
+                icon={CheckCircle}
+                iconBgColor="bg-success/10"
+                iconColor="text-success"
+                description="Vagas abertas para candidatura"
                 trend={{ value: "+8%", isPositive: true }}
               />
               <MetricsCard
                 title="Candidaturas"
                 value={metrics?.totalApplications || 0}
-                icon="fas fa-user-plus"
-                iconBgColor="bg-amber-100"
-                iconColor="text-amber-600"
+                icon={UserPlus}
+                iconBgColor="bg-warning/10"
+                iconColor="text-warning"
+                description="Total de candidaturas recebidas"
                 trend={{ value: "+23%", isPositive: true }}
               />
               <MetricsCard
                 title="Empresas"
                 value={metrics?.totalCompanies || 0}
-                icon="fas fa-building"
-                iconBgColor="bg-blue-100"
-                iconColor="text-blue-600"
+                icon={Building2}
+                iconBgColor="bg-info/10"
+                iconColor="text-info"
+                description="Empresas parceiras cadastradas"
                 trend={{ value: "+3%", isPositive: true }}
               />
             </>
@@ -134,69 +150,121 @@ export default function Dashboard() {
 
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-card p-6 rounded-lg border border-border shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-foreground">Vagas por Status</h3>
-            </div>
-            {jobsByStatusLoading ? (
-              <Skeleton className="h-64 w-full" />
-            ) : (
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie
-                    data={jobsByStatus?.map((item) => ({
-                      name: statusLabels[item.status] || item.status,
-                      value: item.count
-                    })) || []}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="hsl(var(--primary))"
-                    dataKey="value"
-                  >
-                    {jobsByStatus?.map((entry, index: number) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    )) || []}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
-          </div>
+          <Card className="shadow-sm hover:shadow-lg transition-shadow duration-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                <div className="w-2 h-2 bg-primary rounded-full"></div>
+                Vagas por Status
+              </CardTitle>
+              <CardDescription>Distribuição das vagas por situação atual</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {jobsByStatusLoading ? (
+                <Skeleton className="h-64 w-full" />
+              ) : (
+                <ResponsiveContainer width="100%" height={280}>
+                  <PieChart>
+                    <Pie
+                      data={jobsByStatus?.map((item) => ({
+                        name: statusLabels[item.status] || item.status,
+                        value: item.count
+                      })) || []}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={90}
+                      fill="hsl(var(--primary))"
+                      dataKey="value"
+                      strokeWidth={2}
+                      stroke="hsl(var(--background))"
+                    >
+                      {jobsByStatus?.map((entry, index: number) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      )) || []}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--popover))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
 
-          <div className="bg-card p-6 rounded-lg border border-border shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-foreground">Candidaturas por Mês</h3>
-            </div>
-            {applicationsByMonthLoading ? (
-              <Skeleton className="h-64 w-full" />
-            ) : (
-              <ResponsiveContainer width="100%" height={250}>
-                <LineChart
-                  data={applicationsByMonth?.map((item) => ({
-                    month: item.month,
-                    count: item.count
-                  })) || []}
-                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="count" stroke="hsl(var(--primary))" strokeWidth={2} />
-                </LineChart>
-              </ResponsiveContainer>
-            )}
-          </div>
+          <Card className="shadow-sm hover:shadow-lg transition-shadow duration-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                <div className="w-2 h-2 bg-chart-2 rounded-full"></div>
+                Candidaturas por Mês
+              </CardTitle>
+              <CardDescription>Evolução mensal das candidaturas recebidas</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {applicationsByMonthLoading ? (
+                <Skeleton className="h-64 w-full" />
+              ) : (
+                <ResponsiveContainer width="100%" height={280}>
+                  <LineChart
+                    data={applicationsByMonth?.map((item) => ({
+                      month: item.month,
+                      count: item.count
+                    })) || []}
+                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                    <XAxis 
+                      dataKey="month" 
+                      stroke="hsl(var(--muted-foreground))"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis 
+                      stroke="hsl(var(--muted-foreground))"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <Tooltip 
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--popover))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                      }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="count" 
+                      stroke="hsl(var(--chart-2))" 
+                      strokeWidth={3}
+                      dot={{ fill: 'hsl(var(--chart-2))', strokeWidth: 2, r: 5 }}
+                      activeDot={{ r: 7, stroke: 'hsl(var(--chart-2))', strokeWidth: 2, fill: 'hsl(var(--background))' }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         {/* Recent Jobs Table */}
-        <div className="bg-card rounded-lg border border-border shadow-sm">
-          <div className="px-6 py-4 border-b border-border">
+        <Card className="shadow-sm hover:shadow-lg transition-shadow duration-200">
+          <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-foreground">Vagas Recentes</h3>
+              <div>
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <div className="w-2 h-2 bg-chart-3 rounded-full"></div>
+                  Vagas Recentes
+                </CardTitle>
+                <CardDescription>Últimas vagas cadastradas no sistema</CardDescription>
+              </div>
               <div className="flex items-center space-x-4">
                 <div className="relative">
                   <Input
@@ -206,22 +274,23 @@ export default function Dashboard() {
                     onChange={(e) => setSearch(e.target.value)}
                     data-testid="input-search-jobs"
                   />
-                  <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"></i>
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 </div>
               </div>
             </div>
-          </div>
+          </CardHeader>
+          <CardContent className="p-0">
 
-          {jobsLoading ? (
-            <div className="p-6">
-              <div className="space-y-4">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
-                ))}
+            {jobsLoading ? (
+              <div className="p-6">
+                <div className="space-y-4">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <Skeleton key={i} className="h-12 w-full" />
+                  ))}
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
+            ) : (
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -278,13 +347,13 @@ export default function Dashboard() {
                         <TableCell>
                           <div className="flex items-center space-x-2">
                             <Button variant="ghost" size="sm" data-testid={`button-edit-job-${job.id}`}>
-                              <i className="fas fa-edit text-primary"></i>
+                              <Eye className="h-4 w-4 text-primary" />
                             </Button>
                             <Button variant="ghost" size="sm">
-                              <i className="fas fa-users text-green-600"></i>
+                              <Users className="h-4 w-4 text-success" />
                             </Button>
                             <Button variant="ghost" size="sm">
-                              <i className="fas fa-ellipsis-v text-muted-foreground"></i>
+                              <Calendar className="h-4 w-4 text-muted-foreground" />
                             </Button>
                           </div>
                         </TableCell>
@@ -293,8 +362,8 @@ export default function Dashboard() {
                   ) : (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-8">
-                        <div className="text-muted-foreground">
-                          <i className="fas fa-briefcase text-4xl mb-4"></i>
+                        <div className="text-muted-foreground text-center">
+                          <Briefcase className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
                           <p>Nenhuma vaga encontrada</p>
                         </div>
                       </TableCell>
@@ -304,7 +373,8 @@ export default function Dashboard() {
               </Table>
             </div>
           )}
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
       <JobModal

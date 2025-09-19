@@ -20,6 +20,23 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import { 
+  TrendingUp, 
+  Clock, 
+  DollarSign, 
+  Star, 
+  Target, 
+  Users, 
+  BarChart3, 
+  Lightbulb, 
+  CheckCircle, 
+  ArrowUp, 
+  ArrowDown, 
+  AlertTriangle,
+  Briefcase,
+  Building,
+  Calendar
+} from "lucide-react";
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
 
@@ -57,32 +74,38 @@ export default function Performance() {
               <MetricsCard
                 title="Taxa de Conversão"
                 value="24.5%"
-                icon="fas fa-chart-line"
+                icon={TrendingUp}
+                iconBgColor="bg-primary/10"
+                iconColor="text-primary"
+                description="Candidatos convertidos em contratações"
                 trend={{ value: "+2.1%", isPositive: true }}
                 subtitle="vs. período anterior"
               />
               <MetricsCard
                 title="Tempo Médio p/ Contratação"
                 value="18 dias"
-                icon="fas fa-clock"
-                iconBgColor="bg-orange-100"
-                iconColor="text-orange-600"
+                icon={Clock}
+                iconBgColor="bg-warning/10"
+                iconColor="text-warning"
+                description="Do início ao término do processo"
                 trend={{ value: "-3 dias", isPositive: true }}
               />
               <MetricsCard
                 title="Custo por Contratação"
                 value="R$ 1.250"
-                icon="fas fa-dollar-sign"
-                iconBgColor="bg-green-100"
-                iconColor="text-green-600"
+                icon={DollarSign}
+                iconBgColor="bg-success/10"
+                iconColor="text-success"
+                description="Investimento total por contratação"
                 trend={{ value: "-5.2%", isPositive: true }}
               />
               <MetricsCard
                 title="Satisfação do Candidato"
                 value="4.2/5"
-                icon="fas fa-star"
-                iconBgColor="bg-yellow-100"
-                iconColor="text-yellow-600"
+                icon={Star}
+                iconBgColor="bg-warning/10"
+                iconColor="text-warning"
+                description="Avaliação média dos candidatos"
                 trend={{ value: "+0.3", isPositive: true }}
               />
             </>
@@ -158,7 +181,7 @@ export default function Performance() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
-                <i className="fas fa-bullseye mr-2 text-primary"></i>
+                <Target className="h-5 w-5 mr-2 text-primary" />
                 Eficiência do Recrutamento
               </CardTitle>
             </CardHeader>
@@ -183,7 +206,7 @@ export default function Performance() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
-                <i className="fas fa-users mr-2 text-primary"></i>
+                <Users className="h-5 w-5 mr-2 text-primary" />
                 Qualidade dos Candidatos
               </CardTitle>
             </CardHeader>
@@ -212,7 +235,7 @@ export default function Performance() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
-                <i className="fas fa-chart-bar mr-2 text-primary"></i>
+                <BarChart3 className="h-5 w-5 mr-2 text-primary" />
                 Métricas de Engajamento
               </CardTitle>
             </CardHeader>
@@ -243,7 +266,7 @@ export default function Performance() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <i className="fas fa-lightbulb mr-2 text-yellow-500"></i>
+              <Lightbulb className="h-5 w-5 mr-2 text-yellow-500" />
               Insights e Recomendações
             </CardTitle>
           </CardHeader>
@@ -251,20 +274,20 @@ export default function Performance() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <h4 className="font-medium text-green-600 flex items-center">
-                  <i className="fas fa-check-circle mr-2"></i>
+                  <CheckCircle className="h-4 w-4 mr-2" />
                   Pontos Fortes
                 </h4>
                 <ul className="space-y-2 text-sm">
                   <li className="flex items-start">
-                    <i className="fas fa-arrow-up text-green-500 mr-2 mt-1"></i>
+                    <ArrowUp className="h-4 w-4 text-green-500 mr-2 mt-1" />
                     Taxa de conversão 23% acima da média do setor
                   </li>
                   <li className="flex items-start">
-                    <i className="fas fa-arrow-up text-green-500 mr-2 mt-1"></i>
+                    <ArrowUp className="h-4 w-4 text-green-500 mr-2 mt-1" />
                     Tempo médio de contratação reduziu em 18% este mês
                   </li>
                   <li className="flex items-start">
-                    <i className="fas fa-arrow-up text-green-500 mr-2 mt-1"></i>
+                    <ArrowUp className="h-4 w-4 text-green-500 mr-2 mt-1" />
                     Alta satisfação dos candidatos (4.2/5)
                   </li>
                 </ul>
@@ -272,20 +295,20 @@ export default function Performance() {
               
               <div className="space-y-4">
                 <h4 className="font-medium text-orange-600 flex items-center">
-                  <i className="fas fa-exclamation-triangle mr-2"></i>
+                  <AlertTriangle className="h-4 w-4 mr-2" />
                   Oportunidades de Melhoria
                 </h4>
                 <ul className="space-y-2 text-sm">
                   <li className="flex items-start">
-                    <i className="fas fa-arrow-down text-orange-500 mr-2 mt-1"></i>
+                    <ArrowDown className="h-4 w-4 text-orange-500 mr-2 mt-1" />
                     Reduzir taxa de abandono no processo de candidatura
                   </li>
                   <li className="flex items-start">
-                    <i className="fas fa-arrow-down text-orange-500 mr-2 mt-1"></i>
+                    <ArrowDown className="h-4 w-4 text-orange-500 mr-2 mt-1" />
                     Melhorar tempo de resposta para candidatos
                   </li>
                   <li className="flex items-start">
-                    <i className="fas fa-arrow-down text-orange-500 mr-2 mt-1"></i>
+                    <ArrowDown className="h-4 w-4 text-orange-500 mr-2 mt-1" />
                     Aumentar diversidade nas contratações
                   </li>
                 </ul>

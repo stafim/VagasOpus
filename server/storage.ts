@@ -10,6 +10,7 @@ import {
   applicationStageProgress,
   userCompanyRoles,
   rolePermissions,
+  professions,
   type User,
   type UpsertUser,
   type InsertUser,
@@ -37,11 +38,13 @@ import {
   type InsertUserCompanyRole,
   type RolePermission,
   type InsertRolePermission,
+  type Profession,
+  type InsertProfession,
   type SelectionProcessMetrics,
   type InterviewCalendarResponse,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, count, and, ilike, sql } from "drizzle-orm";
+import { eq, desc, count, and, or, ilike, sql } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (mandatory for Replit Auth)
@@ -66,6 +69,14 @@ export interface IStorage {
   updateCostCenter(id: string, costCenter: Partial<InsertCostCenter>): Promise<CostCenter>;
   deleteCostCenter(id: string): Promise<void>;
   
+  // Profession operations
+  getProfessions(): Promise<Profession[]>;
+  getProfessionsByCategory(category: string): Promise<Profession[]>;
+  getProfession(id: string): Promise<Profession | undefined>;
+  createProfession(profession: InsertProfession): Promise<Profession>;
+  updateProfession(id: string, profession: Partial<InsertProfession>): Promise<Profession>;
+  deleteProfession(id: string): Promise<void>;
+
   // Job operations
   getJobs(limit?: number, offset?: number, search?: string): Promise<JobWithDetails[]>;
   getJob(id: string): Promise<JobWithDetails | undefined>;
@@ -278,12 +289,47 @@ export class DatabaseStorage implements IStorage {
     await db.delete(costCenters).where(eq(costCenters.id, id));
   }
 
+  // Profession operations
+  async getProfessions(): Promise<Profession[]> {
+    return await db.select().from(professions).where(eq(professions.isActive, true)).orderBy(professions.name);
+  }
+
+  async getProfessionsByCategory(category: string): Promise<Profession[]> {
+    return await db.select().from(professions)
+      .where(and(eq(professions.category, category), eq(professions.isActive, true)))
+      .orderBy(professions.name);
+  }
+
+  async getProfession(id: string): Promise<Profession | undefined> {
+    const [profession] = await db.select().from(professions).where(eq(professions.id, id));
+    return profession;
+  }
+
+  async createProfession(profession: InsertProfession): Promise<Profession> {
+    const [newProfession] = await db.insert(professions).values(profession).returning();
+    return newProfession;
+  }
+
+  async updateProfession(id: string, profession: Partial<InsertProfession>): Promise<Profession> {
+    const [updatedProfession] = await db
+      .update(professions)
+      .set({ ...profession, updatedAt: new Date() })
+      .where(eq(professions.id, id))
+      .returning();
+    return updatedProfession;
+  }
+
+  async deleteProfession(id: string): Promise<void> {
+    await db.delete(professions).where(eq(professions.id, id));
+  }
+
   // Job operations
   async getJobs(limit = 50, offset = 0, search?: string): Promise<JobWithDetails[]> {
     let baseQuery = db
       .select({
         id: jobs.id,
         title: jobs.title,
+        professionId: jobs.professionId,
         description: jobs.description,
         requirements: jobs.requirements,
         companyId: jobs.companyId,
@@ -298,6 +344,15 @@ export class DatabaseStorage implements IStorage {
         expiresAt: jobs.expiresAt,
         createdAt: jobs.createdAt,
         updatedAt: jobs.updatedAt,
+        profession: {
+          id: professions.id,
+          name: professions.name,
+          description: professions.description,
+          category: professions.category,
+          isActive: professions.isActive,
+          createdAt: professions.createdAt,
+          updatedAt: professions.updatedAt,
+        },
         company: {
           id: companies.id,
           name: companies.name,
@@ -310,13 +365,18 @@ export class DatabaseStorage implements IStorage {
         applicationsCount: count(applications.id),
       })
       .from(jobs)
+      .leftJoin(professions, eq(jobs.professionId, professions.id))
       .leftJoin(companies, eq(jobs.companyId, companies.id))
       .leftJoin(applications, eq(jobs.id, applications.jobId))
-      .groupBy(jobs.id, companies.id);
+      .groupBy(jobs.id, professions.id, companies.id);
 
     if (search) {
       baseQuery = baseQuery.where(
-        ilike(jobs.title, `%${search}%`)
+        or(
+          ilike(jobs.title, `%${search}%`),
+          ilike(professions.name, `%${search}%`),
+          ilike(professions.category, `%${search}%`)
+        )
       );
     }
 
@@ -336,6 +396,7 @@ export class DatabaseStorage implements IStorage {
       .select({
         id: jobs.id,
         title: jobs.title,
+        professionId: jobs.professionId,
         description: jobs.description,
         requirements: jobs.requirements,
         companyId: jobs.companyId,
@@ -350,6 +411,15 @@ export class DatabaseStorage implements IStorage {
         expiresAt: jobs.expiresAt,
         createdAt: jobs.createdAt,
         updatedAt: jobs.updatedAt,
+        profession: {
+          id: professions.id,
+          name: professions.name,
+          description: professions.description,
+          category: professions.category,
+          isActive: professions.isActive,
+          createdAt: professions.createdAt,
+          updatedAt: professions.updatedAt,
+        },
         company: {
           id: companies.id,
           name: companies.name,
@@ -370,6 +440,7 @@ export class DatabaseStorage implements IStorage {
         },
       })
       .from(jobs)
+      .leftJoin(professions, eq(jobs.professionId, professions.id))
       .leftJoin(companies, eq(jobs.companyId, companies.id))
       .leftJoin(costCenters, eq(jobs.costCenterId, costCenters.id))
       .where(eq(jobs.id, id));
@@ -380,6 +451,7 @@ export class DatabaseStorage implements IStorage {
 
     return {
       ...job,
+      profession: job.profession?.id ? job.profession : undefined,
       company: job.company?.id ? job.company : undefined,
       costCenter: job.costCenter?.id ? job.costCenter : undefined,
       applications: jobApplications,

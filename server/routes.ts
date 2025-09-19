@@ -78,6 +78,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Profession routes
+  app.get('/api/professions', isAuthenticated, async (req, res) => {
+    try {
+      const professions = await storage.getProfessions();
+      res.json(professions);
+    } catch (error) {
+      console.error("Error fetching professions:", error);
+      res.status(500).json({ message: "Failed to fetch professions" });
+    }
+  });
+
+  app.get('/api/professions/categories/:category', isAuthenticated, async (req, res) => {
+    try {
+      const { category } = req.params;
+      const professions = await storage.getProfessionsByCategory(category);
+      res.json(professions);
+    } catch (error) {
+      console.error("Error fetching professions by category:", error);
+      res.status(500).json({ message: "Failed to fetch professions by category" });
+    }
+  });
+
+  app.get('/api/professions/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const profession = await storage.getProfession(id);
+      if (!profession) {
+        return res.status(404).json({ message: "Profession not found" });
+      }
+      res.json(profession);
+    } catch (error) {
+      console.error("Error fetching profession:", error);
+      res.status(500).json({ message: "Failed to fetch profession" });
+    }
+  });
+
   // Company routes
   app.get('/api/companies', isAuthenticated, async (req, res) => {
     try {
@@ -230,11 +266,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/jobs', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = (req.session as any).user.id;
+      const userId = req.user?.id || (req.session as any).user?.id;
       const validatedData = insertJobSchema.parse({
         ...req.body,
         createdBy: userId,
       });
+      
+      // Validate profession exists and is active  
+      const profession = await storage.getProfession(validatedData.professionId);
+      if (!profession || !profession.isActive) {
+        return res.status(400).json({ message: "Invalid or inactive profession" });
+      }
+      
+      // Require companyId for authorization
+      if (!validatedData.companyId) {
+        return res.status(400).json({ message: "Company ID is required" });
+      }
+      
+      // Check permission for the specific company
+      const hasPermission = await storage.checkUserPermission(userId, validatedData.companyId, 'create_jobs');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+      
       const job = await storage.createJob(validatedData);
       res.status(201).json(job);
     } catch (error) {
@@ -243,10 +297,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/jobs/:id', isAuthenticated, async (req, res) => {
+  app.put('/api/jobs/:id', isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
+      const userId = req.user?.id || (req.session as any).user?.id;
+      
+      // First load the job to get its actual companyId for authorization
+      const existingJob = await storage.getJob(id);
+      if (!existingJob) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+      
+      // Check permission using the job's actual companyId
+      const hasPermission = await storage.checkUserPermission(userId, existingJob.companyId, 'edit_jobs');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+      
       const validatedData = insertJobSchema.partial().parse(req.body);
+      
+      // Validate profession exists and is active if being updated
+      if (validatedData.professionId) {
+        const profession = await storage.getProfession(validatedData.professionId);
+        if (!profession || !profession.isActive) {
+          return res.status(400).json({ message: "Invalid or inactive profession" });
+        }
+      }
+      
+      // Prevent changing companyId via update (security measure)
+      delete validatedData.companyId;
+      
       const job = await storage.updateJob(id, validatedData);
       res.json(job);
     } catch (error) {
@@ -255,9 +335,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/jobs/:id', isAuthenticated, async (req, res) => {
+  app.delete('/api/jobs/:id', isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
+      const userId = req.user?.id || (req.session as any).user?.id;
+      
+      // First load the job to get its actual companyId for authorization
+      const existingJob = await storage.getJob(id);
+      if (!existingJob) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+      
+      // Check permission using the job's actual companyId
+      const hasPermission = await storage.checkUserPermission(userId, existingJob.companyId, 'delete_jobs');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+      
       await storage.deleteJob(id);
       res.status(204).send();
     } catch (error) {

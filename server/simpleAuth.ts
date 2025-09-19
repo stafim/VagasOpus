@@ -34,7 +34,7 @@ const DEMO_USER = {
 };
 
 // Centralized bypass check - only explicit AUTH_BYPASS=true enables bypass
-const AUTH_BYPASS_ENABLED = process.env.AUTH_BYPASS === 'true' || true; // TEMPORARY: Force enable for user
+const AUTH_BYPASS_ENABLED = process.env.AUTH_BYPASS === 'true';
 
 // Helper function to check if auth bypass is enabled
 export function isAuthBypassEnabled(): boolean {

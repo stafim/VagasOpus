@@ -388,10 +388,20 @@ export const insertCostCenterSchema = createInsertSchema(costCenters).omit({
   updatedAt: true,
 });
 
-export const insertJobSchema = createInsertSchema(jobs).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertJobSchema = z.object({
+  professionId: z.string().min(1, "Profissão é obrigatória"),
+  companyId: z.string().min(1, "Empresa é obrigatória"),
+  description: z.string().optional(),
+  requirements: z.string().optional(),
+  costCenterId: z.string().optional(),
+  department: z.string().optional(),
+  location: z.string().optional(),
+  contractType: z.enum(["clt", "pj", "freelancer", "estagio", "temporario"]).default("clt"),
+  salaryMin: z.string().optional(),
+  salaryMax: z.string().optional(),
+  status: z.enum(["draft", "active", "paused", "closed", "expired"]).default("draft"),
+  createdBy: z.string().optional(),
+  expiresAt: z.string().optional(),
 });
 
 export const insertApplicationSchema = createInsertSchema(applications).omit({

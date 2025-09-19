@@ -50,6 +50,22 @@ export default function Jobs() {
 
   const { data: jobs, isLoading } = useQuery<JobsListResponse>({
     queryKey: ["/api/jobs", { limit: pageSize, offset: currentPage * pageSize, search }],
+    queryFn: async () => {
+      const queryParams = new URLSearchParams();
+      queryParams.set('limit', pageSize.toString());
+      queryParams.set('offset', (currentPage * pageSize).toString());
+      if (search.trim()) {
+        queryParams.set('search', search.trim());
+      }
+      const queryString = queryParams.toString();
+      const jobsUrl = `/api/jobs${queryString ? `?${queryString}` : ''}`;
+      
+      const response = await fetch(jobsUrl, { credentials: "include" });
+      if (!response.ok) {
+        throw new Error(`${response.status}: ${response.statusText}`);
+      }
+      return await response.json();
+    },
   });
 
   const deleteJobMutation = useMutation({
@@ -122,7 +138,7 @@ export default function Jobs() {
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
             <div className="relative flex-1 max-w-md">
               <Input
-                placeholder="Buscar vagas por título..."
+                placeholder="Buscar vagas por profissão..."
                 className="pl-10"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -158,7 +174,7 @@ export default function Jobs() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Título</TableHead>
+                    <TableHead>Profissão</TableHead>
                     <TableHead>Empresa</TableHead>
                     <TableHead>Departamento</TableHead>
                     <TableHead>Status</TableHead>
@@ -175,7 +191,10 @@ export default function Jobs() {
                         <TableCell>
                           <div>
                             <div className="font-medium text-foreground">
-                              {job.title}
+                              {job.profession?.name || job.title || "Profissão não definida"}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {job.profession?.category || ""}
                             </div>
                             {job.location && (
                               <div className="text-sm text-muted-foreground">

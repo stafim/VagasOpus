@@ -3,7 +3,7 @@ import React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertJobSchema, type InsertJob, type JobWithDetails, type CompaniesListResponse } from "@shared/schema";
+import { insertJobSchema, type InsertJob, type JobWithDetails, type CompaniesListResponse, type Profession } from "@shared/schema";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -33,7 +33,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 const jobFormSchema = z.object({
-  title: z.string().min(1, "Título é obrigatório"),
+  professionId: z.string().min(1, "Profissão é obrigatória"),
   description: z.string().optional().default(""),
   requirements: z.string().optional().default(""),
   companyId: z.string().optional(),
@@ -63,6 +63,10 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
     queryKey: ["/api/companies"],
   });
 
+  const { data: professions } = useQuery<Profession[]>({
+    queryKey: ["/api/professions"],
+  });
+
   const { data: jobData } = useQuery<JobWithDetails>({
     queryKey: ["/api/jobs", jobId],
     enabled: isEditing,
@@ -71,7 +75,7 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
   const form = useForm<JobFormData>({
     resolver: zodResolver(jobFormSchema),
     defaultValues: {
-      title: "",
+      professionId: "",
       description: "",
       requirements: "",
       department: "",
@@ -85,7 +89,7 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
   React.useEffect(() => {
     if (isEditing && jobData && !form.formState.isDirty) {
       form.reset({
-        title: jobData.title || "",
+        professionId: jobData.professionId || "",
         description: jobData.description || "",
         requirements: jobData.requirements || "",
         department: jobData.department || "",
@@ -189,13 +193,28 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="title"
+                name="professionId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Título da Vaga</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ex: Desenvolvedor Frontend" {...field} />
-                    </FormControl>
+                    <FormLabel>Profissão</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-profession">
+                          <SelectValue placeholder="Selecione uma profissão" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Array.isArray(professions) && professions
+                          .filter(profession => profession.isActive)
+                          .sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name))
+                          .map((profession) => (
+                            <SelectItem key={profession.id} value={profession.id}>
+                              <span className="text-xs text-muted-foreground mr-2">{profession.category}</span>
+                              {profession.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

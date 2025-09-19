@@ -33,12 +33,9 @@ const DEMO_USER = {
   updatedAt: new Date()
 };
 
-// Centralized bypass check - only explicit AUTH_BYPASS=true enables bypass
-const AUTH_BYPASS_ENABLED = process.env.AUTH_BYPASS === 'true';
-
-// Helper function to check if auth bypass is enabled
+// Helper function to check if auth bypass is enabled (lazy evaluation)
 export function isAuthBypassEnabled(): boolean {
-  return AUTH_BYPASS_ENABLED;
+  return process.env.AUTH_BYPASS === 'true';
 }
 
 // Middleware to setup demo user when AUTH_BYPASS is enabled
@@ -98,13 +95,15 @@ async function verifyPassword(password: string, hash: string): Promise<boolean> 
 
 // Setup simple authentication routes
 export function setupSimpleAuth(app: Express) {
+  const authBypassEnabled = isAuthBypassEnabled();
+  
   // Safety check: refuse to start if bypass is enabled in production
-  if (AUTH_BYPASS_ENABLED && process.env.NODE_ENV === 'production') {
+  if (authBypassEnabled && process.env.NODE_ENV === 'production') {
     throw new Error('SECURITY ERROR: AUTH_BYPASS cannot be enabled in production! Remove AUTH_BYPASS environment variable.');
   }
   
   // Log warning if bypass mode is enabled
-  if (AUTH_BYPASS_ENABLED) {
+  if (authBypassEnabled) {
     console.warn('⚠️  WARNING: AUTH_BYPASS is enabled! Authentication is disabled. DO NOT use in production!');
   }
 

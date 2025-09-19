@@ -3,6 +3,9 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
+import { Badge } from "@/components/ui/badge";
+import { Bell, Plus, Menu, LogOut, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 interface TopBarProps {
   title?: string;
@@ -42,40 +45,94 @@ export default function TopBar({
       setIsLoggingOut(false);
     }
   };
+
   return (
-    <header className="bg-card border-b border-border px-4 py-4 sm:px-6 lg:px-8">
+    <header className="bg-card/80 backdrop-blur-sm border-b border-border/40 px-4 py-3 sm:px-6 lg:px-8 sticky top-0 z-40">
       <div className="flex items-center justify-between">
-        <div className="flex items-center">
-          <button
-            type="button"
-            className="md:hidden p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent"
+        {/* Left section */}
+        <div className="flex items-center space-x-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="md:hidden p-2 h-auto"
             data-testid="button-mobile-menu"
           >
-            <i className="fas fa-bars text-lg"></i>
-          </button>
-          <h2 className="ml-2 md:ml-0 text-2xl font-bold text-foreground">{title}</h2>
+            <Menu className="h-5 w-5" />
+          </Button>
+          
+          <div className="flex flex-col">
+            <h2 className="text-2xl font-bold text-foreground tracking-tight">{title}</h2>
+            <p className="text-sm text-muted-foreground">
+              {new Date().toLocaleDateString('pt-BR', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })}
+            </p>
+          </div>
         </div>
-        <div className="flex items-center space-x-4">
-          <button
-            type="button"
-            className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent"
+
+        {/* Center section - Search */}
+        <div className="hidden md:flex flex-1 max-w-md mx-8">
+          <div className="relative w-full">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Buscar em todo o sistema..."
+              className="pl-10 bg-background/50 border-border/50 focus:bg-background transition-colors"
+            />
+          </div>
+        </div>
+
+        {/* Right section */}
+        <div className="flex items-center space-x-3">
+          {/* Search button for mobile */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="md:hidden p-2 h-auto"
+          >
+            <Search className="h-5 w-5" />
+          </Button>
+
+          {/* Notifications */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="relative p-2 h-auto"
             data-testid="button-notifications"
           >
-            <i className="fas fa-bell text-lg"></i>
-          </button>
+            <Bell className="h-5 w-5" />
+            <Badge 
+              variant="destructive" 
+              className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs"
+            >
+              3
+            </Badge>
+          </Button>
+
+          {/* Create button */}
           {showCreateButton && onCreateClick && (
-            <Button onClick={onCreateClick} data-testid="button-create-job">
-              <i className="fas fa-plus mr-2"></i>
+            <Button 
+              onClick={onCreateClick} 
+              data-testid="button-create-job"
+              className="shadow-lg hover:shadow-xl transition-shadow"
+            >
+              <Plus className="h-4 w-4 mr-2" />
               {createButtonText}
             </Button>
           )}
+
+          {/* Logout button */}
           <Button 
             variant="outline" 
+            size="sm"
             onClick={handleLogout}
             disabled={isLoggingOut}
             data-testid="button-logout"
+            className="transition-all hover:scale-105"
           >
-            <i className="fas fa-sign-out-alt mr-2"></i>
+            <LogOut className="h-4 w-4 mr-2" />
             {isLoggingOut ? "Saindo..." : "Sair"}
           </Button>
         </div>

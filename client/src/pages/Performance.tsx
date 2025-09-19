@@ -32,10 +32,7 @@ import {
   CheckCircle, 
   ArrowUp, 
   ArrowDown, 
-  AlertTriangle,
-  Briefcase,
-  Building,
-  Calendar
+  AlertTriangle
 } from "lucide-react";
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];

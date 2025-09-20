@@ -34,7 +34,10 @@ const statusLabels: Record<string, string> = {
   draft: "Rascunho",
   paused: "Pausada", 
   closed: "Fechada",
-  expired: "Expirada"
+  expired: "Expirada",
+  aberto: "Aberto",
+  em_recrutamento: "Em Recrutamento",
+  em_documentacao: "Em Documentação"
 };
 
 export default function Jobs() {

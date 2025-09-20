@@ -34,7 +34,8 @@ import {
 import { 
   Briefcase, 
   CheckCircle, 
-  UserPlus, 
+  UserPlus,
+  Users, 
   Building2, 
   Search,
   Eye,
@@ -48,7 +49,10 @@ const statusLabels: Record<string, string> = {
   draft: "Rascunho", 
   paused: "Pausada",
   closed: "Fechada",
-  expired: "Expirada"
+  expired: "Expirada",
+  aberto: "Aberto",
+  em_recrutamento: "Em Recrutamento",
+  em_documentacao: "Em Documentação"
 };
 
 export default function Dashboard() {
@@ -76,7 +80,10 @@ export default function Dashboard() {
     draft: "secondary",
     paused: "outline",
     closed: "destructive",
-    expired: "destructive"
+    expired: "destructive",
+    aberto: "default",
+    em_recrutamento: "outline",
+    em_documentacao: "secondary"
   };
 
   const formatSalary = (min?: string, max?: string) => {

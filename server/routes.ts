@@ -309,6 +309,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check permission using the job's actual companyId
+      if (!existingJob.companyId) {
+        return res.status(400).json({ message: "Job has no associated company" });
+      }
       const hasPermission = await storage.checkUserPermission(userId, existingJob.companyId, 'edit_jobs');
       if (!hasPermission) {
         return res.status(403).json({ message: "Insufficient permissions" });
@@ -335,6 +338,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Job status update endpoint
+  app.patch('/api/jobs/:id/status', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      const userId = req.user?.id || (req.session as any).user?.id;
+      
+      // Validate status
+      const validStatuses = ["draft", "active", "paused", "closed", "expired", "aberto", "em_recrutamento", "em_documentacao"];
+      if (!status || !validStatuses.includes(status)) {
+        return res.status(400).json({ message: "Invalid status provided" });
+      }
+      
+      // First load the job to get its actual companyId for authorization
+      const existingJob = await storage.getJob(id);
+      if (!existingJob) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+      
+      // Check permission using the job's actual companyId
+      if (!existingJob.companyId) {
+        return res.status(400).json({ message: "Job has no associated company" });
+      }
+      const hasPermission = await storage.checkUserPermission(userId, existingJob.companyId, 'edit_jobs');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+      
+      // Update only the status
+      const job = await storage.updateJob(id, { status });
+      res.json(job);
+    } catch (error) {
+      console.error("Error updating job status:", error);
+      res.status(500).json({ message: "Failed to update job status" });
+    }
+  });
+
   app.delete('/api/jobs/:id', isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
@@ -347,6 +387,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check permission using the job's actual companyId
+      if (!existingJob.companyId) {
+        return res.status(400).json({ message: "Job has no associated company" });
+      }
       const hasPermission = await storage.checkUserPermission(userId, existingJob.companyId, 'delete_jobs');
       if (!hasPermission) {
         return res.status(403).json({ message: "Insufficient permissions" });

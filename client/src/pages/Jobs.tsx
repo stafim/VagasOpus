@@ -4,10 +4,23 @@ import type { JobsListResponse } from "@shared/schema";
 import Layout from "@/components/Layout";
 import TopBar from "@/components/TopBar";
 import JobModal from "@/components/JobModal";
+import JobStatusSelect from "@/components/JobStatusSelect";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Search,
+  Filter,
+  Download,
+  MapPin,
+  Edit,
+  Users,
+  Copy,
+  Trash2,
+  Briefcase,
+  Plus
+} from "lucide-react";
 import {
   Table,
   TableBody,
@@ -147,15 +160,15 @@ export default function Jobs() {
                 onChange={(e) => setSearch(e.target.value)}
                 data-testid="input-search"
               />
-              <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"></i>
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             </div>
             <div className="flex gap-2">
               <Button variant="outline" size="sm">
-                <i className="fas fa-filter mr-2"></i>
+                <Filter className="h-4 w-4 mr-2" />
                 Filtros
               </Button>
               <Button variant="outline" size="sm">
-                <i className="fas fa-download mr-2"></i>
+                <Download className="h-4 w-4 mr-2" />
                 Exportar
               </Button>
             </div>
@@ -201,7 +214,7 @@ export default function Jobs() {
                             </div>
                             {job.location && (
                               <div className="text-sm text-muted-foreground">
-                                <i className="fas fa-map-marker-alt mr-1"></i>
+                                <MapPin className="h-3 w-3 mr-1" />
                                 {job.location}
                               </div>
                             )}
@@ -218,9 +231,10 @@ export default function Jobs() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={statusVariants[job.status] || "secondary"}>
-                            {statusLabels[job.status] || job.status}
-                          </Badge>
+                          <JobStatusSelect
+                            jobId={job.id}
+                            currentStatus={job.status}
+                          />
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center">
@@ -247,13 +261,13 @@ export default function Jobs() {
                               onClick={() => handleEditJob(job.id)}
                               data-testid={`button-edit-${job.id}`}
                             >
-                              <i className="fas fa-edit text-primary"></i>
+                              <Edit className="h-4 w-4 text-primary" />
                             </Button>
                             <Button variant="ghost" size="sm">
-                              <i className="fas fa-users text-green-600"></i>
+                              <Users className="h-4 w-4 text-green-600" />
                             </Button>
                             <Button variant="ghost" size="sm">
-                              <i className="fas fa-copy text-blue-600"></i>
+                              <Copy className="h-4 w-4 text-blue-600" />
                             </Button>
                             <Button
                               variant="ghost"
@@ -261,7 +275,7 @@ export default function Jobs() {
                               onClick={() => setDeletingJobId(job.id)}
                               data-testid={`button-delete-${job.id}`}
                             >
-                              <i className="fas fa-trash text-destructive"></i>
+                              <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </div>
                         </TableCell>
@@ -271,7 +285,7 @@ export default function Jobs() {
                     <TableRow>
                       <TableCell colSpan={8} className="text-center py-12">
                         <div className="text-muted-foreground">
-                          <i className="fas fa-briefcase text-4xl mb-4"></i>
+                          <Briefcase className="h-16 w-16 mb-4" />
                           <p className="text-lg font-medium mb-2">Nenhuma vaga encontrada</p>
                           <p className="text-sm">
                             {search
@@ -283,7 +297,7 @@ export default function Jobs() {
                               onClick={() => setShowJobModal(true)}
                               className="mt-4"
                             >
-                              <i className="fas fa-plus mr-2"></i>
+                              <Plus className="h-4 w-4 mr-2" />
                               Criar Primeira Vaga
                             </Button>
                           )}

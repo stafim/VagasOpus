@@ -43,6 +43,11 @@ export const users = pgTable("users", {
 export const companies = pgTable("companies", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: varchar("name", { length: 255 }).notNull(),
+  cnpj: varchar("cnpj", { length: 18 }),
+  contactPerson: varchar("contact_person", { length: 255 }),
+  phone: varchar("phone", { length: 20 }),
+  email: varchar("email", { length: 255 }),
+  industryType: varchar("industry_type", { length: 100 }),
   description: text("description"),
   website: varchar("website"),
   logo: varchar("logo"),

@@ -57,3 +57,35 @@ export const getStatusVariant = (status: string): "default" | "secondary" | "des
 export const getStatusDescription = (status: string): string => {
   return JOB_STATUS_CONFIG[status as JobStatus]?.description || "";
 };
+
+// Industry Types Configuration
+export const INDUSTRY_TYPES = [
+  { value: "technology", label: "Tecnologia" },
+  { value: "finance", label: "Financeiro" },
+  { value: "healthcare", label: "Saúde" },
+  { value: "education", label: "Educação" },
+  { value: "retail", label: "Varejo" },
+  { value: "manufacturing", label: "Manufatura" },
+  { value: "construction", label: "Construção" },
+  { value: "automotive", label: "Automotivo" },
+  { value: "energy", label: "Energia" },
+  { value: "telecommunications", label: "Telecomunicações" },
+  { value: "consulting", label: "Consultoria" },
+  { value: "media", label: "Mídia" },
+  { value: "transportation", label: "Transporte" },
+  { value: "hospitality", label: "Hotelaria" },
+  { value: "agriculture", label: "Agricultura" },
+  { value: "legal", label: "Jurídico" },
+  { value: "real_estate", label: "Imobiliário" },
+  { value: "insurance", label: "Seguros" },
+  { value: "non_profit", label: "Sem Fins Lucrativos" },
+  { value: "government", label: "Governo" },
+  { value: "other", label: "Outros" }
+] as const;
+
+export type IndustryType = typeof INDUSTRY_TYPES[number]["value"];
+
+export const getIndustryLabel = (industryType: string): string => {
+  const industry = INDUSTRY_TYPES.find(i => i.value === industryType);
+  return industry?.label || industryType;
+};

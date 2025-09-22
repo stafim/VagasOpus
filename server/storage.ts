@@ -78,7 +78,7 @@ export interface IStorage {
   deleteProfession(id: string): Promise<void>;
 
   // Job operations
-  getJobs(limit?: number, offset?: number, search?: string): Promise<JobWithDetails[]>;
+  getJobs(limit?: number, offset?: number, search?: string, status?: string, companyId?: string, professionId?: string): Promise<JobWithDetails[]>;
   getJob(id: string): Promise<JobWithDetails | undefined>;
   createJob(job: InsertJob): Promise<Job>;
   updateJob(id: string, job: Partial<InsertJob>): Promise<Job>;
@@ -324,7 +324,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Job operations
-  async getJobs(limit = 50, offset = 0, search?: string): Promise<JobWithDetails[]> {
+  async getJobs(limit = 50, offset = 0, search?: string, status?: string, companyId?: string, professionId?: string): Promise<JobWithDetails[]> {
     let baseQuery = db
       .select({
         id: jobs.id,
@@ -370,14 +370,32 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(applications, eq(jobs.id, applications.jobId))
       .groupBy(jobs.id, professions.id, companies.id);
 
+    const whereConditions = [];
+
     if (search) {
-      baseQuery = baseQuery.where(
+      whereConditions.push(
         or(
           ilike(jobs.title, `%${search}%`),
           ilike(professions.name, `%${search}%`),
           ilike(professions.category, `%${search}%`)
         )
       );
+    }
+
+    if (status) {
+      whereConditions.push(eq(jobs.status, status));
+    }
+
+    if (companyId) {
+      whereConditions.push(eq(jobs.companyId, companyId));
+    }
+
+    if (professionId) {
+      whereConditions.push(eq(jobs.professionId, professionId));
+    }
+
+    if (whereConditions.length > 0) {
+      baseQuery = baseQuery.where(and(...whereConditions));
     }
 
     const result = await baseQuery

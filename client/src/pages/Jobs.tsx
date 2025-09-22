@@ -10,6 +10,14 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { JOB_STATUS_CONFIG, getStatusLabel } from "@shared/constants";
+import {
   Search,
   Filter,
   Download,
@@ -58,20 +66,43 @@ export default function Jobs() {
   const [editingJobId, setEditingJobId] = useState<string | undefined>();
   const [deletingJobId, setDeletingJobId] = useState<string | undefined>();
   const [search, setSearch] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [companyFilter, setCompanyFilter] = useState("");
+  const [professionFilter, setProfessionFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
   const pageSize = 20;
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Fetch companies for filter
+  const { data: companies } = useQuery<any[]>({
+    queryKey: ["/api/companies"],
+  });
+
+  // Fetch professions for filter
+  const { data: professions } = useQuery<any[]>({
+    queryKey: ["/api/professions"],
+  });
+
   const { data: jobs, isLoading } = useQuery<JobsListResponse>({
-    queryKey: ["/api/jobs", { limit: pageSize, offset: currentPage * pageSize, search }],
+    queryKey: ["/api/jobs", { limit: pageSize, offset: currentPage * pageSize, search, statusFilter, companyFilter, professionFilter }],
     queryFn: async () => {
       const queryParams = new URLSearchParams();
       queryParams.set('limit', pageSize.toString());
       queryParams.set('offset', (currentPage * pageSize).toString());
       if (search.trim()) {
         queryParams.set('search', search.trim());
+      }
+      if (statusFilter) {
+        queryParams.set('status', statusFilter);
+      }
+      if (companyFilter) {
+        queryParams.set('companyId', companyFilter);
+      }
+      if (professionFilter) {
+        queryParams.set('professionId', professionFilter);
       }
       const queryString = queryParams.toString();
       const jobsUrl = `/api/jobs${queryString ? `?${queryString}` : ''}`;
@@ -163,7 +194,12 @@ export default function Jobs() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+                data-testid="button-filters"
+              >
                 <Filter className="h-4 w-4 mr-2" />
                 Filtros
               </Button>
@@ -174,6 +210,76 @@ export default function Jobs() {
             </div>
           </div>
         </div>
+
+        {/* Filters Panel */}
+        {showFilters && (
+          <div className="bg-card p-6 rounded-lg border border-border">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Status</label>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger data-testid="select-status-filter">
+                    <SelectValue placeholder="Todos os status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Todos os status</SelectItem>
+                    {Object.keys(JOB_STATUS_CONFIG).map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {getStatusLabel(status)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Empresa</label>
+                <Select value={companyFilter} onValueChange={setCompanyFilter}>
+                  <SelectTrigger data-testid="select-company-filter">
+                    <SelectValue placeholder="Todas as empresas" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Todas as empresas</SelectItem>
+                    {companies?.map((company: any) => (
+                      <SelectItem key={company.id} value={company.id}>
+                        {company.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Profissão</label>
+                <Select value={professionFilter} onValueChange={setProfessionFilter}>
+                  <SelectTrigger data-testid="select-profession-filter">
+                    <SelectValue placeholder="Todas as profissões" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Todas as profissões</SelectItem>
+                    {professions?.map((profession: any) => (
+                      <SelectItem key={profession.id} value={profession.id}>
+                        {profession.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  setStatusFilter("");
+                  setCompanyFilter("");
+                  setProfessionFilter("");
+                }}
+                data-testid="button-clear-filters"
+              >
+                Limpar Filtros
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Jobs Table */}
         <div className="bg-card rounded-lg border border-border shadow-sm">

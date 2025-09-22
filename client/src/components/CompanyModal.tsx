@@ -23,6 +23,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { INDUSTRY_TYPES } from "@shared/constants";
 
 interface CompanyModalProps {
   isOpen: boolean;
@@ -42,6 +50,11 @@ export default function CompanyModal({ isOpen, onClose, companyId }: CompanyModa
 
   const companyFormSchema = z.object({
     name: z.string().min(1, "Nome é obrigatório"),
+    cnpj: z.string().optional().default(""),
+    contactPerson: z.string().optional().default(""),
+    phone: z.string().optional().default(""),
+    email: z.string().email("Email inválido").optional().or(z.literal("")),
+    industryType: z.string().optional().default(""),
     description: z.string().optional().default(""),
     website: z.string().optional().default(""),
   });
@@ -50,6 +63,11 @@ export default function CompanyModal({ isOpen, onClose, companyId }: CompanyModa
     resolver: zodResolver(companyFormSchema),
     defaultValues: {
       name: "",
+      cnpj: "",
+      contactPerson: "",
+      phone: "",
+      email: "",
+      industryType: "",
       description: "",
       website: "",
     },
@@ -60,6 +78,11 @@ export default function CompanyModal({ isOpen, onClose, companyId }: CompanyModa
     if (isEditing && companyData && !form.formState.isDirty) {
       form.reset({
         name: companyData?.name || "",
+        cnpj: companyData?.cnpj || "",
+        contactPerson: companyData?.contactPerson || "",
+        phone: companyData?.phone || "",
+        email: companyData?.email || "",
+        industryType: companyData?.industryType || "",
         description: companyData?.description || "",
         website: companyData?.website || "",
       });
@@ -147,6 +170,89 @@ export default function CompanyModal({ isOpen, onClose, companyId }: CompanyModa
               )}
             />
 
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="cnpj"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>CNPJ</FormLabel>
+                    <FormControl>
+                      <Input placeholder="00.000.000/0000-00" {...field} data-testid="input-cnpj" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="contactPerson"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Pessoa de Contato</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Nome do responsável" {...field} data-testid="input-contact-person" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Telefone</FormLabel>
+                    <FormControl>
+                      <Input placeholder="(11) 99999-9999" {...field} data-testid="input-phone" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="contato@empresa.com.br" {...field} data-testid="input-email" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="industryType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipo de Indústria</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value} data-testid="select-industry-type">
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o setor de atuação" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {INDUSTRY_TYPES.map((industry) => (
+                        <SelectItem key={industry.value} value={industry.value}>
+                          {industry.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="website"
@@ -154,7 +260,7 @@ export default function CompanyModal({ isOpen, onClose, companyId }: CompanyModa
                 <FormItem>
                   <FormLabel>Website</FormLabel>
                   <FormControl>
-                    <Input placeholder="https://www.empresa.com.br" {...field} />
+                    <Input placeholder="https://www.empresa.com.br" {...field} data-testid="input-website" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

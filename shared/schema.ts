@@ -136,6 +136,7 @@ export const jobs = pgTable("jobs", {
   requirements: text("requirements"),
   companyId: varchar("company_id").references(() => companies.id),
   costCenterId: varchar("cost_center_id").references(() => costCenters.id),
+  recruiterId: varchar("recruiter_id").references(() => users.id),
   department: varchar("department"),
   location: varchar("location"),
   contractType: contractTypeEnum("contract_type").default("clt"),

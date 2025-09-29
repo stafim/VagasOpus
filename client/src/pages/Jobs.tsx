@@ -298,6 +298,7 @@ export default function Jobs() {
                   <TableRow>
                     <TableHead>Profissão</TableHead>
                     <TableHead>Empresa</TableHead>
+                    <TableHead>Recrutador</TableHead>
                     <TableHead>Departamento</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Candidatos</TableHead>
@@ -329,6 +330,11 @@ export default function Jobs() {
                         <TableCell>
                           <div className="text-sm text-foreground">
                             {job.company?.name || "N/A"}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm text-foreground">
+                            {job.recruiter ? `${job.recruiter.firstName} ${job.recruiter.lastName}` : "Não atribuído"}
                           </div>
                         </TableCell>
                         <TableCell>

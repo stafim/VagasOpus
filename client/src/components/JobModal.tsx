@@ -38,6 +38,7 @@ const jobFormSchema = z.object({
   requirements: z.string().optional().default(""),
   companyId: z.string().optional(),
   costCenterId: z.string().optional(),
+  recruiterId: z.string().optional(),
   department: z.string().optional().default(""),
   location: z.string().optional().default(""),
   contractType: z.enum(["clt", "pj", "freelancer", "estagio", "temporario"]).default("clt"),
@@ -67,6 +68,10 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
     queryKey: ["/api/professions"],
   });
 
+  const { data: recruiters } = useQuery({
+    queryKey: ["/api/recruiters"],
+  });
+
   const { data: jobData } = useQuery<JobWithDetails>({
     queryKey: ["/api/jobs", jobId],
     enabled: isEditing,
@@ -78,6 +83,7 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
       professionId: "",
       description: "",
       requirements: "",
+      recruiterId: "",
       department: "",
       location: "",
       contractType: "clt",
@@ -96,6 +102,7 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
         location: jobData.location || "",
         companyId: jobData.companyId || undefined,
         costCenterId: jobData.costCenterId || undefined,
+        recruiterId: jobData.recruiterId || "",
         contractType: jobData.contractType || "clt",
         status: jobData.status || "draft",
         salaryMin: jobData.salaryMin || "",
@@ -236,6 +243,31 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
                         {Array.isArray(companies) && companies.map((company: any) => (
                           <SelectItem key={company.id} value={company.id}>
                             {company.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="recruiterId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Recrutador</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ""}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-recruiter">
+                          <SelectValue placeholder="Selecione um recrutador" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Array.isArray(recruiters) && recruiters.map((recruiter: any) => (
+                          <SelectItem key={recruiter.id} value={recruiter.id}>
+                            {recruiter.firstName} {recruiter.lastName}
                           </SelectItem>
                         ))}
                       </SelectContent>

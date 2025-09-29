@@ -89,6 +89,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Recruiters endpoint
+  app.get('/api/recruiters', isAuthenticated, async (req, res) => {
+    try {
+      const recruiters = await storage.getRecruiters();
+      res.json(recruiters);
+    } catch (error) {
+      console.error("Error fetching recruiters:", error);
+      res.status(500).json({ message: "Failed to fetch recruiters" });
+    }
+  });
+
   app.get('/api/professions/categories/:category', isAuthenticated, async (req, res) => {
     try {
       const { category } = req.params;

@@ -55,6 +55,7 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: { email: string; passwordHash: string; firstName?: string; lastName?: string }): Promise<User>;
   updateUserPassword(id: string, passwordHash: string): Promise<User>;
+  getRecruiters(): Promise<User[]>;
   
   // Company operations
   getCompanies(): Promise<CompanyWithCostCenters[]>;
@@ -194,6 +195,11 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return updatedUser;
+  }
+
+  // Get users that can be assigned as recruiters
+  async getRecruiters(): Promise<User[]> {
+    return await db.select().from(users);
   }
 
   // Company operations

@@ -24,6 +24,7 @@ import {
   MapPin,
   Edit,
   Users,
+  User,
   Copy,
   Trash2,
   Briefcase,
@@ -333,8 +334,15 @@ export default function Jobs() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="text-sm text-foreground">
-                            {job.recruiter ? `${job.recruiter.firstName} ${job.recruiter.lastName}` : "Não atribuído"}
+                          <div className="flex items-center gap-2 text-sm text-foreground">
+                            {job.recruiter ? (
+                              <>
+                                <User className="h-4 w-4 text-green-600" />
+                                <span>{job.recruiter.firstName} {job.recruiter.lastName}</span>
+                              </>
+                            ) : (
+                              <span className="text-muted-foreground">Não atribuído</span>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>

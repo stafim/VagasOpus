@@ -334,6 +334,7 @@ export class DatabaseStorage implements IStorage {
         requirements: jobs.requirements,
         companyId: jobs.companyId,
         costCenterId: jobs.costCenterId,
+        recruiterId: jobs.recruiterId,
         department: jobs.department,
         location: jobs.location,
         contractType: jobs.contractType,
@@ -362,13 +363,20 @@ export class DatabaseStorage implements IStorage {
           createdAt: companies.createdAt,
           updatedAt: companies.updatedAt,
         },
+        recruiter: {
+          id: sql<string>`recruiter_users.id`,
+          firstName: sql<string>`recruiter_users.first_name`,
+          lastName: sql<string>`recruiter_users.last_name`,
+          email: sql<string>`recruiter_users.email`,
+        },
         applicationsCount: count(applications.id),
       })
       .from(jobs)
       .leftJoin(professions, eq(jobs.professionId, professions.id))
       .leftJoin(companies, eq(jobs.companyId, companies.id))
+      .leftJoin(sql`users as recruiter_users`, eq(jobs.recruiterId, sql`recruiter_users.id`))
       .leftJoin(applications, eq(jobs.id, applications.jobId))
-      .groupBy(jobs.id, professions.id, companies.id);
+      .groupBy(jobs.id, professions.id, companies.id, sql`recruiter_users.id`);
 
     const whereConditions = [];
 
@@ -406,6 +414,7 @@ export class DatabaseStorage implements IStorage {
     return result.map(row => ({
       ...row,
       company: row.company?.id ? row.company : undefined,
+      recruiter: row.recruiter?.id ? row.recruiter : undefined,
     }));
   }
 
@@ -419,6 +428,7 @@ export class DatabaseStorage implements IStorage {
         requirements: jobs.requirements,
         companyId: jobs.companyId,
         costCenterId: jobs.costCenterId,
+        recruiterId: jobs.recruiterId,
         department: jobs.department,
         location: jobs.location,
         contractType: jobs.contractType,
@@ -447,6 +457,12 @@ export class DatabaseStorage implements IStorage {
           createdAt: companies.createdAt,
           updatedAt: companies.updatedAt,
         },
+        recruiter: {
+          id: sql<string>`recruiter_users.id`,
+          firstName: sql<string>`recruiter_users.first_name`,
+          lastName: sql<string>`recruiter_users.last_name`,
+          email: sql<string>`recruiter_users.email`,
+        },
         costCenter: {
           id: costCenters.id,
           name: costCenters.name,
@@ -460,6 +476,7 @@ export class DatabaseStorage implements IStorage {
       .from(jobs)
       .leftJoin(professions, eq(jobs.professionId, professions.id))
       .leftJoin(companies, eq(jobs.companyId, companies.id))
+      .leftJoin(sql`users as recruiter_users`, eq(jobs.recruiterId, sql`recruiter_users.id`))
       .leftJoin(costCenters, eq(jobs.costCenterId, costCenters.id))
       .where(eq(jobs.id, id));
 
@@ -471,6 +488,7 @@ export class DatabaseStorage implements IStorage {
       ...job,
       profession: job.profession?.id ? job.profession : undefined,
       company: job.company?.id ? job.company : undefined,
+      recruiter: job.recruiter?.id ? job.recruiter : undefined,
       costCenter: job.costCenter?.id ? job.costCenter : undefined,
       applications: jobApplications,
       applicationsCount: jobApplications.length,

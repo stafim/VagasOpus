@@ -42,7 +42,7 @@ const jobFormSchema = z.object({
   department: z.string().optional().default(""),
   location: z.string().optional().default(""),
   contractType: z.enum(["clt", "pj", "freelancer", "estagio", "temporario"]).default("clt"),
-  status: z.enum(["draft", "active", "paused", "closed", "expired"]).default("draft"),
+  status: z.enum(["draft", "active", "paused", "closed", "expired", "aberto", "em_recrutamento", "em_documentacao"]).default("draft"),
   salaryMin: z.string().optional().default(""),
   salaryMax: z.string().optional().default(""),
 });
@@ -213,7 +213,7 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
                       <SelectContent>
                         {Array.isArray(professions) && professions
                           .filter(profession => profession.isActive)
-                          .sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name))
+                          .sort((a, b) => (a.category || "").localeCompare(b.category || "") || a.name.localeCompare(b.name))
                           .map((profession) => (
                             <SelectItem key={profession.id} value={profession.id}>
                               <span className="text-xs text-muted-foreground mr-2">{profession.category}</span>

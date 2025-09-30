@@ -161,6 +161,9 @@ export interface IStorage {
   getRolePermissions(): Promise<RolePermission[]>;
   setupDefaultRolePermissions(): Promise<void>;
   checkUserPermission(userId: string, companyId: string, permission: string): Promise<boolean>;
+  
+  // Job closure report
+  getJobClosureReport(): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1359,6 +1362,33 @@ export class DatabaseStorage implements IStorage {
   async checkUserPermission(userId: string, companyId: string, permission: string): Promise<boolean> {
     const userPermissions = await this.getUserPermissions(userId, companyId);
     return userPermissions.includes(permission);
+  }
+
+  async getJobClosureReport(): Promise<any[]> {
+    const result = await db
+      .select({
+        recruiterId: users.id,
+        recruiterName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
+        recruiterEmail: users.email,
+        closedJobsCount: count(jobs.id),
+        avgDaysToClose: sql<number>`COALESCE(AVG(EXTRACT(EPOCH FROM (${jobs.updatedAt} - ${jobs.createdAt})) / 86400), 0)`,
+        avgSalaryMin: sql<number>`COALESCE(AVG(CAST(${jobs.salaryMin} AS DECIMAL)), 0)`,
+        avgSalaryMax: sql<number>`COALESCE(AVG(CAST(${jobs.salaryMax} AS DECIMAL)), 0)`,
+      })
+      .from(jobs)
+      .innerJoin(users, eq(jobs.recruiterId, users.id))
+      .where(eq(jobs.status, 'closed'))
+      .groupBy(users.id, users.firstName, users.lastName, users.email)
+      .orderBy(desc(count(jobs.id)));
+
+    return result.map((row) => ({
+      recruiterId: row.recruiterId,
+      recruiterName: row.recruiterName,
+      recruiterEmail: row.recruiterEmail,
+      closedJobsCount: Number(row.closedJobsCount),
+      averageDaysToClose: Math.round(Number(row.avgDaysToClose)),
+      averageSalary: Math.round((Number(row.avgSalaryMin) + Number(row.avgSalaryMax)) / 2),
+    }));
   }
 }
 

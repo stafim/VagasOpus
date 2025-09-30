@@ -678,3 +678,12 @@ export type InterviewCalendarResponse = {
   todayInterviews: InterviewWithDetails[];
   overdueInterviews: InterviewWithDetails[];
 };
+
+export type JobClosureReportItem = {
+  recruiterId: string;
+  recruiterName: string;
+  recruiterEmail: string;
+  closedJobsCount: number;
+  averageDaysToClose: number;
+  averageSalary: number;
+};

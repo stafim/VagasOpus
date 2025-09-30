@@ -79,6 +79,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/reports/job-closure', isAuthenticated, async (req, res) => {
+    try {
+      const report = await storage.getJobClosureReport();
+      res.json(report);
+    } catch (error) {
+      console.error("Error fetching job closure report:", error);
+      res.status(500).json({ message: "Failed to fetch job closure report" });
+    }
+  });
+
   // Profession routes
   app.get('/api/professions', isAuthenticated, async (req, res) => {
     try {

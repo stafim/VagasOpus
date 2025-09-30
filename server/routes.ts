@@ -4,7 +4,8 @@ import { storage } from "./storage";
 import { setupSimpleAuth, isAuthenticated } from "./simpleAuth";
 import { 
   insertCompanySchema, 
-  insertCostCenterSchema, 
+  insertCostCenterSchema,
+  insertClientSchema,
   insertJobSchema, 
   insertApplicationSchema,
   insertUserCompanyRoleSchema,
@@ -243,6 +244,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting cost center:", error);
       res.status(500).json({ message: "Failed to delete cost center" });
+    }
+  });
+
+  // Client Routes
+  app.get('/api/clients', isAuthenticated, async (req, res) => {
+    try {
+      const clients = await storage.getClients();
+      res.json(clients);
+    } catch (error) {
+      console.error("Error fetching clients:", error);
+      res.status(500).json({ message: "Failed to fetch clients" });
+    }
+  });
+
+  app.get('/api/clients/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const client = await storage.getClient(id);
+      if (!client) {
+        return res.status(404).json({ message: "Client not found" });
+      }
+      res.json(client);
+    } catch (error) {
+      console.error("Error fetching client:", error);
+      res.status(500).json({ message: "Failed to fetch client" });
+    }
+  });
+
+  app.post('/api/clients', isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertClientSchema.parse(req.body);
+      const client = await storage.createClient(validatedData);
+      res.status(201).json(client);
+    } catch (error) {
+      console.error("Error creating client:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid client data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create client" });
+    }
+  });
+
+  app.put('/api/clients/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validatedData = insertClientSchema.partial().parse(req.body);
+      const client = await storage.updateClient(id, validatedData);
+      res.json(client);
+    } catch (error) {
+      console.error("Error updating client:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid client data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update client" });
+    }
+  });
+
+  app.delete('/api/clients/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteClient(id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting client:", error);
+      res.status(500).json({ message: "Failed to delete client" });
     }
   });
 

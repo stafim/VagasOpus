@@ -2,6 +2,7 @@ import {
   users,
   companies,
   costCenters,
+  clients,
   jobs,
   applications,
   selectionStages,
@@ -18,6 +19,8 @@ import {
   type InsertCompany,
   type CostCenter,
   type InsertCostCenter,
+  type Client,
+  type InsertClient,
   type Job,
   type InsertJob,
   type JobWithDetails,
@@ -69,6 +72,13 @@ export interface IStorage {
   createCostCenter(costCenter: InsertCostCenter): Promise<CostCenter>;
   updateCostCenter(id: string, costCenter: Partial<InsertCostCenter>): Promise<CostCenter>;
   deleteCostCenter(id: string): Promise<void>;
+  
+  // Client operations
+  getClients(): Promise<Client[]>;
+  getClient(id: string): Promise<Client | undefined>;
+  createClient(client: InsertClient): Promise<Client>;
+  updateClient(id: string, client: Partial<InsertClient>): Promise<Client>;
+  deleteClient(id: string): Promise<void>;
   
   // Profession operations
   getProfessions(): Promise<Profession[]>;
@@ -294,6 +304,42 @@ export class DatabaseStorage implements IStorage {
 
   async deleteCostCenter(id: string): Promise<void> {
     await db.delete(costCenters).where(eq(costCenters.id, id));
+  }
+
+  // Client operations
+  async getClients(): Promise<Client[]> {
+    return await db
+      .select()
+      .from(clients)
+      .where(eq(clients.isActive, true))
+      .orderBy(clients.name);
+  }
+
+  async getClient(id: string): Promise<Client | undefined> {
+    const [client] = await db.select().from(clients).where(eq(clients.id, id));
+    return client;
+  }
+
+  async createClient(client: InsertClient): Promise<Client> {
+    const [newClient] = await db.insert(clients).values(client).returning();
+    return newClient;
+  }
+
+  async updateClient(id: string, client: Partial<InsertClient>): Promise<Client> {
+    const [updatedClient] = await db
+      .update(clients)
+      .set({ ...client, updatedAt: new Date() })
+      .where(eq(clients.id, id))
+      .returning();
+    return updatedClient;
+  }
+
+  async deleteClient(id: string): Promise<void> {
+    // Soft delete
+    await db
+      .update(clients)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(clients.id, id));
   }
 
   // Profession operations

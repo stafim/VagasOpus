@@ -43,14 +43,20 @@ const KANBAN_STAGES = [
   { id: "contratado", label: "Contratado", color: "bg-emerald-600" },
 ];
 
+interface Candidate {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+}
+
 interface Application {
   id: string;
   jobId: string;
-  candidateName: string;
-  candidateEmail: string;
-  candidatePhone?: string;
+  candidateId: string;
   kanbanStage: string;
   appliedAt: string;
+  candidate?: Candidate;
   job?: {
     profession?: {
       name: string;
@@ -131,17 +137,27 @@ export default function Kanban() {
 
   const createCandidateMutation = useMutation({
     mutationFn: async (data: CandidateFormData) => {
-      const response = await apiRequest("POST", "/api/applications", {
-        ...data,
+      // First, create the candidate
+      const candidateResponse = await apiRequest("POST", "/api/candidates", {
+        name: data.candidateName,
+        email: data.candidateEmail,
+        phone: data.candidatePhone || "",
+      });
+      const candidate = await candidateResponse.json();
+      
+      // Then, create the application linking candidate to job
+      const applicationResponse = await apiRequest("POST", "/api/applications", {
+        jobId: data.jobId,
+        candidateId: candidate.id,
         kanbanStage: "entrevista_inicial", // Start at first stage
       });
-      return response.json();
+      return applicationResponse.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/applications"] });
       toast({
         title: "Sucesso",
-        description: "Candidato criado com sucesso!",
+        description: "Candidato adicionado ao Kanban com sucesso!",
       });
       setShowCandidateModal(false);
       form.reset();
@@ -149,7 +165,7 @@ export default function Kanban() {
     onError: () => {
       toast({
         title: "Erro",
-        description: "Erro ao criar candidato. Tente novamente.",
+        description: "Erro ao adicionar candidato. Tente novamente.",
         variant: "destructive",
       });
     },
@@ -322,21 +338,21 @@ export default function Kanban() {
                               <div className="flex items-start gap-3">
                                 <Avatar className="h-10 w-10">
                                   <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                                    {getInitials(application.candidateName)}
+                                    {getInitials(application.candidate?.name || "?")}
                                   </AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1 min-w-0">
                                   <h4 className="font-semibold text-sm truncate">
-                                    {application.candidateName}
+                                    {application.candidate?.name || "Candidato"}
                                   </h4>
                                   <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                                     <Mail className="h-3 w-3" />
-                                    <span className="truncate">{application.candidateEmail}</span>
+                                    <span className="truncate">{application.candidate?.email || "N/A"}</span>
                                   </div>
-                                  {application.candidatePhone && (
+                                  {application.candidate?.phone && (
                                     <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                                       <Phone className="h-3 w-3" />
-                                      <span>{application.candidatePhone}</span>
+                                      <span>{application.candidate.phone}</span>
                                     </div>
                                   )}
                                 </div>

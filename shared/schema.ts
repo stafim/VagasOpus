@@ -273,14 +273,28 @@ export const kanbanStageEnum = pgEnum("kanban_stage", [
   "contratado"
 ]);
 
-// Applications table
+// Candidates table (global pool of candidates)
+export const candidates = pgTable("candidates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull(),
+  phone: varchar("phone", { length: 20 }),
+  resume: varchar("resume"), // URL to resume file
+  skills: text("skills"),
+  experience: text("experience"),
+  education: text("education"),
+  linkedinUrl: varchar("linkedin_url"),
+  portfolioUrl: varchar("portfolio_url"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Applications table (links candidates to specific jobs)
 export const applications = pgTable("applications", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  jobId: varchar("job_id").references(() => jobs.id),
-  candidateName: varchar("candidate_name", { length: 255 }).notNull(),
-  candidateEmail: varchar("candidate_email", { length: 255 }).notNull(),
-  candidatePhone: varchar("candidate_phone"),
-  resume: varchar("resume"), // URL to resume file
+  jobId: varchar("job_id").references(() => jobs.id).notNull(),
+  candidateId: varchar("candidate_id").references(() => candidates.id).notNull(),
   coverLetter: text("cover_letter"),
   status: selectionStatusEnum("status").default("applied"),
   currentStage: varchar("current_stage").default("application_received"),
@@ -383,10 +397,18 @@ export const jobsRelations = relations(jobs, ({ one, many }) => ({
   applications: many(applications),
 }));
 
+export const candidatesRelations = relations(candidates, ({ many }) => ({
+  applications: many(applications),
+}));
+
 export const applicationsRelations = relations(applications, ({ one, many }) => ({
   job: one(jobs, {
     fields: [applications.jobId],
     references: [jobs.id],
+  }),
+  candidate: one(candidates, {
+    fields: [applications.candidateId],
+    references: [candidates.id],
   }),
   interviews: many(interviews),
   stageProgress: many(applicationStageProgress),
@@ -526,6 +548,12 @@ export const insertJobSchema = z.object({
   hasHealthInsurance: z.boolean().optional(),
 });
 
+export const insertCandidateSchema = createInsertSchema(candidates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertApplicationSchema = createInsertSchema(applications).omit({
   id: true,
   appliedAt: true,
@@ -586,6 +614,9 @@ export type InsertClient = z.infer<typeof insertClientSchema>;
 export type Job = typeof jobs.$inferSelect;
 export type InsertJob = z.infer<typeof insertJobSchema>;
 
+export type Candidate = typeof candidates.$inferSelect;
+export type InsertCandidate = z.infer<typeof insertCandidateSchema>;
+
 export type Application = typeof applications.$inferSelect;
 export type InsertApplication = z.infer<typeof insertApplicationSchema>;
 
@@ -623,6 +654,7 @@ export type JobWithDetails = Job & {
 
 export type ApplicationWithDetails = Application & {
   job?: Job;
+  candidate?: Candidate;
   interviews?: Interview[];
   stageProgress?: ApplicationStageProgress[];
   currentStageInfo?: SelectionStage;

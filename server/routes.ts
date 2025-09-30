@@ -6,7 +6,8 @@ import {
   insertCompanySchema, 
   insertCostCenterSchema,
   insertClientSchema,
-  insertJobSchema, 
+  insertJobSchema,
+  insertCandidateSchema,
   insertApplicationSchema,
   insertUserCompanyRoleSchema,
   insertSelectionStageSchema,
@@ -493,6 +494,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Candidate routes
+  app.get('/api/candidates', isAuthenticated, async (req, res) => {
+    try {
+      const candidates = await storage.getCandidates();
+      res.json(candidates);
+    } catch (error) {
+      console.error("Error fetching candidates:", error);
+      res.status(500).json({ message: "Failed to fetch candidates" });
+    }
+  });
+
+  app.get('/api/candidates/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const candidate = await storage.getCandidate(id);
+      if (!candidate) {
+        return res.status(404).json({ message: "Candidate not found" });
+      }
+      res.json(candidate);
+    } catch (error) {
+      console.error("Error fetching candidate:", error);
+      res.status(500).json({ message: "Failed to fetch candidate" });
+    }
+  });
+
+  app.post('/api/candidates', async (req, res) => {
+    try {
+      const validatedData = insertCandidateSchema.parse(req.body);
+      const candidate = await storage.createCandidate(validatedData);
+      res.status(201).json(candidate);
+    } catch (error) {
+      console.error("Error creating candidate:", error);
+      res.status(400).json({ message: "Invalid candidate data" });
+    }
+  });
+
+  app.patch('/api/candidates/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const candidate = await storage.updateCandidate(id, req.body);
+      res.json(candidate);
+    } catch (error) {
+      console.error("Error updating candidate:", error);
+      res.status(500).json({ message: "Failed to update candidate" });
+    }
+  });
+
+  app.delete('/api/candidates/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteCandidate(id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting candidate:", error);
+      res.status(500).json({ message: "Failed to delete candidate" });
+    }
+  });
+
   // Application routes
   app.get('/api/jobs/:jobId/applications', isAuthenticated, async (req, res) => {
     try {
@@ -518,7 +577,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/applications', isAuthenticated, async (req, res) => {
     try {
-      const applications = await storage.getApplicationsWithJobDetails();
+      const { jobId } = req.query;
+      let applications;
+      
+      if (jobId && typeof jobId === 'string') {
+        applications = await storage.getApplicationsByJob(jobId);
+        // Also get candidate and job details for each application
+        const detailedApplications = await storage.getApplicationsWithJobDetails();
+        applications = detailedApplications.filter(app => app.jobId === jobId);
+      } else {
+        applications = await storage.getApplicationsWithJobDetails();
+      }
+      
       res.json(applications);
     } catch (error) {
       console.error("Error fetching applications:", error);

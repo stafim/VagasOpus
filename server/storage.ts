@@ -4,6 +4,7 @@ import {
   costCenters,
   clients,
   jobs,
+  candidates,
   applications,
   selectionStages,
   interviews,
@@ -25,6 +26,8 @@ import {
   type InsertJob,
   type JobWithDetails,
   type CompanyWithCostCenters,
+  type Candidate,
+  type InsertCandidate,
   type Application,
   type InsertApplication,
   type ApplicationWithDetails,
@@ -87,6 +90,14 @@ export interface IStorage {
   createProfession(profession: InsertProfession): Promise<Profession>;
   updateProfession(id: string, profession: Partial<InsertProfession>): Promise<Profession>;
   deleteProfession(id: string): Promise<void>;
+
+  // Candidate operations
+  getCandidates(): Promise<Candidate[]>;
+  getCandidate(id: string): Promise<Candidate | undefined>;
+  getCandidateByEmail(email: string): Promise<Candidate | undefined>;
+  createCandidate(candidate: InsertCandidate): Promise<Candidate>;
+  updateCandidate(id: string, candidate: Partial<InsertCandidate>): Promise<Candidate>;
+  deleteCandidate(id: string): Promise<void>;
 
   // Job operations
   getJobs(limit?: number, offset?: number, search?: string, status?: string, companyId?: string, professionId?: string): Promise<JobWithDetails[]>;
@@ -379,6 +390,39 @@ export class DatabaseStorage implements IStorage {
     await db.delete(professions).where(eq(professions.id, id));
   }
 
+  // Candidate operations
+  async getCandidates(): Promise<Candidate[]> {
+    return await db.select().from(candidates).orderBy(desc(candidates.createdAt));
+  }
+
+  async getCandidate(id: string): Promise<Candidate | undefined> {
+    const [candidate] = await db.select().from(candidates).where(eq(candidates.id, id));
+    return candidate;
+  }
+
+  async getCandidateByEmail(email: string): Promise<Candidate | undefined> {
+    const [candidate] = await db.select().from(candidates).where(eq(candidates.email, email));
+    return candidate;
+  }
+
+  async createCandidate(candidate: InsertCandidate): Promise<Candidate> {
+    const [newCandidate] = await db.insert(candidates).values(candidate).returning();
+    return newCandidate;
+  }
+
+  async updateCandidate(id: string, candidate: Partial<InsertCandidate>): Promise<Candidate> {
+    const [updatedCandidate] = await db
+      .update(candidates)
+      .set(candidate)
+      .where(eq(candidates.id, id))
+      .returning();
+    return updatedCandidate;
+  }
+
+  async deleteCandidate(id: string): Promise<void> {
+    await db.delete(candidates).where(eq(candidates.id, id));
+  }
+
   // Job operations
   async getJobs(limit = 50, offset = 0, search?: string, status?: string, companyId?: string, professionId?: string): Promise<JobWithDetails[]> {
     let baseQuery = db
@@ -639,15 +683,18 @@ export class DatabaseStorage implements IStorage {
       .select({
         id: applications.id,
         jobId: applications.jobId,
-        candidateName: applications.candidateName,
-        candidateEmail: applications.candidateEmail,
-        candidatePhone: applications.candidatePhone,
-        resume: applications.resume,
+        candidateId: applications.candidateId,
         coverLetter: applications.coverLetter,
         status: applications.status,
         currentStage: applications.currentStage,
         kanbanStage: applications.kanbanStage,
         appliedAt: applications.appliedAt,
+        candidate: {
+          id: candidates.id,
+          name: candidates.name,
+          email: candidates.email,
+          phone: candidates.phone,
+        },
         job: {
           id: jobs.id,
           professionId: jobs.professionId,
@@ -662,6 +709,7 @@ export class DatabaseStorage implements IStorage {
         },
       })
       .from(applications)
+      .leftJoin(candidates, eq(applications.candidateId, candidates.id))
       .leftJoin(jobs, eq(applications.jobId, jobs.id))
       .leftJoin(professions, eq(jobs.professionId, professions.id))
       .leftJoin(companies, eq(jobs.companyId, companies.id))
@@ -669,6 +717,7 @@ export class DatabaseStorage implements IStorage {
 
     return result.map(row => ({
       ...row,
+      candidate: row.candidate?.id ? row.candidate : undefined,
       job: row.job?.id ? {
         ...row.job,
         profession: row.job.profession?.id ? row.job.profession : undefined,
@@ -757,23 +806,25 @@ export class DatabaseStorage implements IStorage {
         interviewer: users,
         stage: selectionStages,
         application: applications,
+        candidate: candidates,
       })
       .from(interviews)
       .leftJoin(users, eq(interviews.interviewerId, users.id))
       .leftJoin(selectionStages, eq(interviews.stageId, selectionStages.id))
       .leftJoin(applications, eq(interviews.applicationId, applications.id))
+      .leftJoin(candidates, eq(applications.candidateId, candidates.id))
       .where(eq(interviews.applicationId, applicationId))
       .orderBy(interviews.scheduledAt);
 
     return result.map(row => ({
       ...row.interview,
-      interviewer: row.interviewer,
-      stage: row.stage,
-      application: row.application,
-      candidate: row.application ? {
-        name: row.application.candidateName,
-        email: row.application.candidateEmail,
-        jobTitle: "Candidate", // Could be enhanced with job title lookup
+      interviewer: row.interviewer || undefined,
+      stage: row.stage || undefined,
+      application: row.application || undefined,
+      candidate: row.candidate ? {
+        name: row.candidate.name,
+        email: row.candidate.email,
+        jobTitle: "Candidate",
       } : undefined,
     }));
   }
@@ -785,11 +836,13 @@ export class DatabaseStorage implements IStorage {
         interviewer: users,
         stage: selectionStages,
         application: applications,
+        candidate: candidates,
       })
       .from(interviews)
       .leftJoin(users, eq(interviews.interviewerId, users.id))
       .leftJoin(selectionStages, eq(interviews.stageId, selectionStages.id))
       .leftJoin(applications, eq(interviews.applicationId, applications.id))
+      .leftJoin(candidates, eq(applications.candidateId, candidates.id))
       .where(eq(interviews.id, id));
 
     if (result.length === 0) return undefined;
@@ -799,13 +852,13 @@ export class DatabaseStorage implements IStorage {
 
     return {
       ...row.interview,
-      interviewer: row.interviewer,
-      stage: row.stage,
-      application: row.application,
+      interviewer: row.interviewer || undefined,
+      stage: row.stage || undefined,
+      application: row.application || undefined,
       criteria,
-      candidate: row.application ? {
-        name: row.application.candidateName,
-        email: row.application.candidateEmail,
+      candidate: row.candidate ? {
+        name: row.candidate.name,
+        email: row.candidate.email,
         jobTitle: "Candidate",
       } : undefined,
     };
@@ -818,11 +871,13 @@ export class DatabaseStorage implements IStorage {
         interviewer: users,
         stage: selectionStages,
         application: applications,
+        candidate: candidates,
       })
       .from(interviews)
       .leftJoin(users, eq(interviews.interviewerId, users.id))
       .leftJoin(selectionStages, eq(interviews.stageId, selectionStages.id))
       .leftJoin(applications, eq(interviews.applicationId, applications.id))
+      .leftJoin(candidates, eq(applications.candidateId, candidates.id))
       .where(and(
         sql`${interviews.scheduledAt} >= NOW()`,
         eq(interviews.status, "scheduled")
@@ -840,12 +895,12 @@ export class DatabaseStorage implements IStorage {
 
     return result.map(row => ({
       ...row.interview,
-      interviewer: row.interviewer,
-      stage: row.stage,
-      application: row.application,
-      candidate: row.application ? {
-        name: row.application.candidateName,
-        email: row.application.candidateEmail,
+      interviewer: row.interviewer || undefined,
+      stage: row.stage || undefined,
+      application: row.application || undefined,
+      candidate: row.candidate ? {
+        name: row.candidate.name,
+        email: row.candidate.email,
         jobTitle: "Candidate",
       } : undefined,
     }));

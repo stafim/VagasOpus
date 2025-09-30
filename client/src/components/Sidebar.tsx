@@ -112,7 +112,7 @@ export default function Sidebar() {
               className="w-12 h-12 object-contain"
             />
             <div className="ml-3">
-              <p className="text-xs text-muted-foreground">Sistema de Gestão</p>
+              <p className="text-xs text-muted-foreground">Gestão de Vagas</p>
             </div>
           </div>
         </div>

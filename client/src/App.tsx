@@ -16,6 +16,7 @@ import Performance from "@/pages/Performance";
 import Reports from "@/pages/Reports";
 import Permissions from "@/pages/Permissions";
 import Kanban from "@/pages/Kanban";
+import JobClosureReport from "@/pages/JobClosureReport";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -36,6 +37,7 @@ function Router() {
           <Route path="/permissions" component={() => <Layout><Permissions /></Layout>} />
           <Route path="/performance" component={() => <Layout><Performance /></Layout>} />
           <Route path="/reports" component={() => <Layout><Reports /></Layout>} />
+          <Route path="/reports/job-closure" component={() => <Layout><JobClosureReport /></Layout>} />
         </>
       )}
       <Route component={NotFound} />

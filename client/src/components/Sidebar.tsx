@@ -13,7 +13,8 @@ import {
   FileText,
   Settings,
   HelpCircle,
-  LogOut
+  LogOut,
+  ClipboardCheck
 } from "lucide-react";
 import logoImage from "@assets/Screenshot_20250930_142224_Chrome~2_1759253037075.jpg";
 
@@ -72,6 +73,12 @@ const navigationItems = [
     href: "/reports",
     icon: FileText,
     description: "Relatórios detalhados"
+  },
+  {
+    name: "Fechamento de Vagas",
+    href: "/reports/job-closure",
+    icon: ClipboardCheck,
+    description: "Ranking de recrutadores"
   },
 ];
 

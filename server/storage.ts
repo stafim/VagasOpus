@@ -429,7 +429,15 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(companies, eq(jobs.companyId, companies.id))
       .leftJoin(sql`users as recruiter_users`, eq(jobs.recruiterId, sql`recruiter_users.id`))
       .leftJoin(applications, eq(jobs.id, applications.jobId))
-      .groupBy(jobs.id, professions.id, companies.id, sql`recruiter_users.id`);
+      .groupBy(
+        jobs.id, 
+        professions.id, 
+        companies.id, 
+        sql`recruiter_users.id`,
+        sql`recruiter_users.first_name`,
+        sql`recruiter_users.last_name`,
+        sql`recruiter_users.email`
+      );
 
     const whereConditions = [];
 

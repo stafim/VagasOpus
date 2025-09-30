@@ -87,6 +87,36 @@ export const contractTypeEnum = pgEnum("contract_type", [
   "temporario"
 ]);
 
+// Job opening reason enum
+export const jobReasonEnum = pgEnum("job_reason", [
+  "substituicao",
+  "aumento_quadro"
+]);
+
+// Gender enum
+export const genderEnum = pgEnum("gender", [
+  "masculino",
+  "feminino",
+  "indiferente"
+]);
+
+// Work scale enum
+export const workScaleEnum = pgEnum("work_scale", [
+  "5x1",
+  "5x2",
+  "6x1",
+  "12x36",
+  "outro"
+]);
+
+// Unhealthiness level enum
+export const unhealthinessEnum = pgEnum("unhealthiness_level", [
+  "nao",
+  "10",
+  "20",
+  "40"
+]);
+
 // Permission system enums
 export const roleTypeEnum = pgEnum("role_type", [
   "admin",
@@ -122,6 +152,7 @@ export const professions = pgTable("professions", {
   name: varchar("name", { length: 255 }).notNull().unique(),
   description: text("description"),
   category: varchar("category", { length: 100 }), // e.g., "Tecnologia", "Marketing", "Vendas"
+  union: varchar("union", { length: 255 }), // Sindicato
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -140,8 +171,33 @@ export const jobs = pgTable("jobs", {
   department: varchar("department"),
   location: varchar("location"),
   contractType: contractTypeEnum("contract_type").default("clt"),
+  
+  // Novos campos detalhados da vaga
+  openingDate: timestamp("opening_date"), // Data de abertura da vaga
+  startDate: timestamp("start_date"), // Data de início
+  openingReason: jobReasonEnum("opening_reason"), // Motivo: substituição ou aumento de quadro
+  ageRangeMin: integer("age_range_min"), // Idade mínima
+  ageRangeMax: integer("age_range_max"), // Idade máxima
+  specifications: text("specifications"), // Especificações detalhadas
+  clientName: varchar("client_name", { length: 255 }), // Cliente
+  vacancyQuantity: integer("vacancy_quantity").default(1), // Quantidade de vagas
+  gender: genderEnum("gender").default("indiferente"), // Sexo
+  workScale: workScaleEnum("work_scale"), // Escala de trabalho
+  workHours: varchar("work_hours", { length: 100 }), // Horário de trabalho
+  
+  // Remuneração e benefícios
   salaryMin: decimal("salary_min", { precision: 10, scale: 2 }),
   salaryMax: decimal("salary_max", { precision: 10, scale: 2 }),
+  bonus: decimal("bonus", { precision: 10, scale: 2 }), // Gratificação
+  hasHazardPay: boolean("has_hazard_pay").default(false), // Periculosidade
+  unhealthinessLevel: unhealthinessEnum("unhealthiness_level").default("nao"), // Insalubridade
+  
+  // Benefícios
+  hasMealVoucher: boolean("has_meal_voucher").default(false), // Vale alimentação
+  hasFoodVoucher: boolean("has_food_voucher").default(false), // Vale refeição
+  hasTransportVoucher: boolean("has_transport_voucher").default(false), // Vale transporte
+  hasHealthInsurance: boolean("has_health_insurance").default(false), // Plano de saúde
+  
   status: jobStatusEnum("status").default("draft"),
   createdBy: varchar("created_by").references(() => users.id),
   expiresAt: timestamp("expires_at"),

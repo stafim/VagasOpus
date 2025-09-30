@@ -154,7 +154,7 @@ export default function JobClosureReport() {
                           </div>
                         </TableCell>
                         <TableCell className="text-center">
-                          <Badge variant="default" className="font-semibold">
+                          <Badge variant="default" className="font-semibold bg-green-600 hover:bg-green-700 text-white">
                             {item.closedJobsCount}
                           </Badge>
                         </TableCell>

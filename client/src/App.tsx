@@ -14,6 +14,7 @@ import Users from "@/pages/Users";
 import Performance from "@/pages/Performance";
 import Reports from "@/pages/Reports";
 import Permissions from "@/pages/Permissions";
+import Kanban from "@/pages/Kanban";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -27,6 +28,7 @@ function Router() {
           <Route path="/" component={() => <Layout><Dashboard /></Layout>} />
           <Route path="/dashboard" component={() => <Layout><Dashboard /></Layout>} />
           <Route path="/jobs" component={() => <Layout><Jobs /></Layout>} />
+          <Route path="/kanban" component={() => <Layout><Kanban /></Layout>} />
           <Route path="/companies" component={() => <Layout><Companies /></Layout>} />
           <Route path="/users" component={() => <Layout><Users /></Layout>} />
           <Route path="/permissions" component={() => <Layout><Permissions /></Layout>} />

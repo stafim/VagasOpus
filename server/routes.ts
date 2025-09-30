@@ -440,6 +440,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/applications', isAuthenticated, async (req, res) => {
+    try {
+      const applications = await storage.getApplicationsWithJobDetails();
+      res.json(applications);
+    } catch (error) {
+      console.error("Error fetching applications:", error);
+      res.status(500).json({ message: "Failed to fetch applications" });
+    }
+  });
+
+  app.patch('/api/applications/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const application = await storage.updateApplication(id, req.body);
+      res.json(application);
+    } catch (error) {
+      console.error("Error updating application:", error);
+      res.status(500).json({ message: "Failed to update application" });
+    }
+  });
+
   app.patch('/api/applications/:id/status', isAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;

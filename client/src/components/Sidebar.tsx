@@ -31,6 +31,12 @@ const navigationItems = [
     badge: "Novo"
   },
   {
+    name: "Kanban",
+    href: "/kanban",
+    icon: BarChart3,
+    description: "Pipeline de candidatos"
+  },
+  {
     name: "Empresas",
     href: "/companies",
     icon: Building2,

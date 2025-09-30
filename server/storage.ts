@@ -88,6 +88,7 @@ export interface IStorage {
   // Application operations
   getApplicationsByJob(jobId: string): Promise<Application[]>;
   getApplicationWithDetails(id: string): Promise<ApplicationWithDetails | undefined>;
+  getApplicationsWithJobDetails(): Promise<any[]>;
   createApplication(application: InsertApplication): Promise<Application>;
   updateApplicationStatus(id: string, status: string): Promise<Application>;
   updateApplication(id: string, application: Partial<InsertApplication>): Promise<Application>;
@@ -574,6 +575,49 @@ export class DatabaseStorage implements IStorage {
       .where(eq(applications.id, id))
       .returning();
     return updatedApplication;
+  }
+
+  async getApplicationsWithJobDetails(): Promise<any[]> {
+    const result = await db
+      .select({
+        id: applications.id,
+        jobId: applications.jobId,
+        candidateName: applications.candidateName,
+        candidateEmail: applications.candidateEmail,
+        candidatePhone: applications.candidatePhone,
+        resume: applications.resume,
+        coverLetter: applications.coverLetter,
+        status: applications.status,
+        currentStage: applications.currentStage,
+        kanbanStage: applications.kanbanStage,
+        appliedAt: applications.appliedAt,
+        job: {
+          id: jobs.id,
+          professionId: jobs.professionId,
+          profession: {
+            id: professions.id,
+            name: professions.name,
+          },
+          company: {
+            id: companies.id,
+            name: companies.name,
+          },
+        },
+      })
+      .from(applications)
+      .leftJoin(jobs, eq(applications.jobId, jobs.id))
+      .leftJoin(professions, eq(jobs.professionId, professions.id))
+      .leftJoin(companies, eq(jobs.companyId, companies.id))
+      .orderBy(desc(applications.appliedAt));
+
+    return result.map(row => ({
+      ...row,
+      job: row.job?.id ? {
+        ...row.job,
+        profession: row.job.profession?.id ? row.job.profession : undefined,
+        company: row.job.company?.id ? row.job.company : undefined,
+      } : undefined,
+    }));
   }
 
   // Selection Stages operations

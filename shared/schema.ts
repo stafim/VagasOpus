@@ -192,6 +192,15 @@ export const interviewTypeEnum = pgEnum("interview_type", [
   "panel"
 ]);
 
+// Kanban stages enum
+export const kanbanStageEnum = pgEnum("kanban_stage", [
+  "entrevista_inicial",
+  "teste_tecnico",
+  "entrevista_gestor",
+  "proposta",
+  "contratado"
+]);
+
 // Applications table
 export const applications = pgTable("applications", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -203,6 +212,7 @@ export const applications = pgTable("applications", {
   coverLetter: text("cover_letter"),
   status: selectionStatusEnum("status").default("applied"),
   currentStage: varchar("current_stage").default("application_received"),
+  kanbanStage: kanbanStageEnum("kanban_stage").default("entrevista_inicial"),
   overallScore: integer("overall_score").default(0), // Score out of 100
   rejectionReason: text("rejection_reason"),
   notes: text("notes"), // Internal notes about candidate

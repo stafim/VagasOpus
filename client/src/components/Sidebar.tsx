@@ -5,7 +5,8 @@ import { Separator } from "@/components/ui/separator";
 import { 
   BarChart3, 
   Briefcase, 
-  Building2, 
+  Building2,
+  UserCheck,
   Users, 
   Shield, 
   TrendingUp, 
@@ -41,6 +42,12 @@ const navigationItems = [
     href: "/companies",
     icon: Building2,
     description: "Cadastro de empresas"
+  },
+  {
+    name: "Clientes",
+    href: "/clients",
+    icon: UserCheck,
+    description: "Cadastro de clientes"
   },
   {
     name: "Usuários",

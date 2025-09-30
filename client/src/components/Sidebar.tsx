@@ -14,6 +14,7 @@ import {
   HelpCircle,
   LogOut
 } from "lucide-react";
+import logoImage from "@assets/Screenshot_20250930_142224_Chrome~2_1759253037075.jpg";
 
 const navigationItems = [
   {
@@ -85,11 +86,12 @@ export default function Sidebar() {
         {/* Header */}
         <div className="flex items-center flex-shrink-0 px-6 py-6">
           <div className="flex items-center">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary to-chart-2 rounded-xl flex items-center justify-center shadow-lg">
-              <Briefcase className="h-5 w-5 text-primary-foreground" />
-            </div>
+            <img 
+              src={logoImage} 
+              alt="VagasPro Logo" 
+              className="w-12 h-12 object-contain"
+            />
             <div className="ml-3">
-              <h1 className="text-xl font-bold text-foreground">VagasPro</h1>
               <p className="text-xs text-muted-foreground">Sistema de Gestão</p>
             </div>
           </div>

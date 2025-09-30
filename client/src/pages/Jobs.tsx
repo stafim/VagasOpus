@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import type { JobsListResponse } from "@shared/schema";
 import Layout from "@/components/Layout";
 import TopBar from "@/components/TopBar";
@@ -28,7 +29,8 @@ import {
   Copy,
   Trash2,
   Briefcase,
-  Plus
+  Plus,
+  LayoutDashboard
 } from "lucide-react";
 import {
   Table,
@@ -78,6 +80,7 @@ export default function Jobs() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const [, setLocation] = useLocation();
 
   // Fetch companies for filter
   const { data: companies } = useQuery<any[]>({
@@ -197,6 +200,10 @@ export default function Jobs() {
     if (user?.id) {
       assignRecruiterMutation.mutate({ jobId, userId: user.id });
     }
+  };
+
+  const handleGoToKanban = (jobId: string) => {
+    setLocation(`/kanban?jobId=${jobId}`);
   };
 
   return (
@@ -419,6 +426,15 @@ export default function Jobs() {
                               data-testid={`button-assign-${job.id}`}
                             >
                               <Users className="h-4 w-4 text-green-600" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleGoToKanban(job.id)}
+                              title="Ver Kanban desta vaga"
+                              data-testid={`button-kanban-${job.id}`}
+                            >
+                              <LayoutDashboard className="h-4 w-4 text-purple-600" />
                             </Button>
                             <Button variant="ghost" size="sm">
                               <Copy className="h-4 w-4 text-blue-600" />

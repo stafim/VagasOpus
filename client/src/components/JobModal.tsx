@@ -3,7 +3,8 @@ import React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertJobSchema, type InsertJob, type JobWithDetails, type CompaniesListResponse, type Profession } from "@shared/schema";
+import { insertJobSchema, type InsertJob, type JobWithDetails, type CompaniesListResponse, type Profession, type Client } from "@shared/schema";
+import { getAllCities } from "@shared/constants";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -53,7 +54,7 @@ const jobFormSchema = z.object({
   ageRangeMin: z.string().optional(),
   ageRangeMax: z.string().optional(),
   specifications: z.string().optional(),
-  clientName: z.string().optional(),
+  clientId: z.string().optional(),
   vacancyQuantity: z.string().optional().default("1"),
   gender: z.enum(["masculino", "feminino", "indiferente"]).default("indiferente"),
   workScale: z.enum(["5x1", "5x2", "6x1", "12x36", "outro"]).optional(),
@@ -83,6 +84,7 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isEditing = !!jobId;
+  const [cities] = useState(getAllCities());
 
   const { data: companies } = useQuery<CompaniesListResponse>({
     queryKey: ["/api/companies"],
@@ -90,6 +92,10 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
 
   const { data: professions } = useQuery<Profession[]>({
     queryKey: ["/api/professions"],
+  });
+
+  const { data: clients } = useQuery<Client[]>({
+    queryKey: ["/api/clients"],
   });
 
   const { data: recruiters } = useQuery({
@@ -145,7 +151,7 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
         ageRangeMin: jobData.ageRangeMin?.toString() || "",
         ageRangeMax: jobData.ageRangeMax?.toString() || "",
         specifications: jobData.specifications || "",
-        clientName: jobData.clientName || "",
+        clientId: jobData.clientId || "",
         vacancyQuantity: jobData.vacancyQuantity?.toString() || "1",
         gender: jobData.gender || "indiferente",
         workScale: jobData.workScale || undefined,
@@ -332,13 +338,24 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
 
                 <FormField
                   control={form.control}
-                  name="clientName"
+                  name="clientId"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Cliente</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Nome do cliente" {...field} data-testid="input-client" />
-                      </FormControl>
+                      <Select onValueChange={field.onChange} value={field.value || ""}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-client">
+                            <SelectValue placeholder="Selecione o cliente" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {clients?.map((client) => (
+                            <SelectItem key={client.id} value={client.id}>
+                              {client.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -523,10 +540,21 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
                   name="location"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Localização</FormLabel>
-                      <FormControl>
-                        <Input placeholder="São Paulo, SP" {...field} data-testid="input-location" />
-                      </FormControl>
+                      <FormLabel>Cidade</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ""}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-location">
+                            <SelectValue placeholder="Selecione a cidade" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {cities.map((city) => (
+                            <SelectItem key={city} value={city}>
+                              {city}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

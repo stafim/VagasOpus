@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import Layout from "@/components/Layout";
 import TopBar from "@/components/TopBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -100,7 +99,7 @@ export default function Kanban() {
   };
 
   return (
-    <Layout>
+    <>
       <TopBar title="Kanban de Candidatos" />
 
       <div className="space-y-6">
@@ -222,6 +221,6 @@ export default function Kanban() {
           })}
         </div>
       </div>
-    </Layout>
+    </>
   );
 }

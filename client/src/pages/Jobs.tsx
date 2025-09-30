@@ -145,10 +145,12 @@ export default function Jobs() {
 
   const assignRecruiterMutation = useMutation({
     mutationFn: async ({ jobId, userId }: { jobId: string; userId: string }) => {
-      await apiRequest("PATCH", `/api/jobs/${jobId}`, { recruiterId: userId });
+      const response = await apiRequest("PUT", `/api/jobs/${jobId}`, { recruiterId: userId });
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
+      queryClient.refetchQueries({ queryKey: ["/api/jobs"] });
       toast({
         title: "Sucesso",
         description: "Vaga atribuída com sucesso!",

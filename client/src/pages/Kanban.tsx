@@ -273,17 +273,17 @@ export default function Kanban() {
         </div>
 
         {/* Kanban Board */}
-        <div className="flex gap-4 overflow-x-auto pb-4">
+        <div className="flex gap-3 overflow-x-auto pb-4">
           {KANBAN_STAGES.map((stage) => {
             const stageApplications = getApplicationsByStage(stage.id);
             return (
               <div
                 key={stage.id}
-                className="flex-shrink-0 w-80"
+                className="flex-shrink-0 w-56"
                 onDragOver={handleDragOver}
                 onDrop={() => handleDrop(stage.id)}
               >
-                <div className="bg-muted/30 rounded-lg p-4 h-full min-h-[600px]">
+                <div className="bg-muted/30 rounded-lg p-3 h-full min-h-[500px]">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <div className={`w-3 h-3 rounded-full ${stage.color}`}></div>

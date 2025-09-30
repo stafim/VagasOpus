@@ -84,9 +84,10 @@ export default function Kanban() {
 
   const { data: applications = [], isLoading } = useQuery<Application[]>({
     queryKey: ["/api/applications", selectedJobFilter],
+    enabled: !!selectedJobFilter,
     queryFn: async () => {
       const queryParams = new URLSearchParams();
-      if (selectedJobFilter && selectedJobFilter !== "all") {
+      if (selectedJobFilter) {
         queryParams.set('jobId', selectedJobFilter);
       }
       const queryString = queryParams.toString();
@@ -107,8 +108,10 @@ export default function Kanban() {
   useEffect(() => {
     if (jobIdFromUrl) {
       setSelectedJobFilter(jobIdFromUrl);
+    } else if (jobs.length > 0 && !selectedJobFilter) {
+      setSelectedJobFilter(jobs[0].id);
     }
-  }, [jobIdFromUrl]);
+  }, [jobIdFromUrl, jobs]);
 
   const form = useForm<CandidateFormData>({
     resolver: zodResolver(candidateFormSchema),
@@ -212,8 +215,8 @@ export default function Kanban() {
   };
 
   const handleOpenModal = () => {
-    if (jobIdFromUrl) {
-      form.setValue("jobId", jobIdFromUrl);
+    if (selectedJobFilter) {
+      form.setValue("jobId", selectedJobFilter);
     }
     setShowCandidateModal(true);
   };
@@ -237,19 +240,24 @@ export default function Kanban() {
         <div className="bg-card p-4 rounded-lg border border-border">
           <div className="flex items-center gap-4">
             <Filter className="h-4 w-4 text-muted-foreground" />
-            <Select value={selectedJobFilter} onValueChange={setSelectedJobFilter}>
-              <SelectTrigger className="w-[300px]" data-testid="select-job-filter">
-                <SelectValue placeholder="Filtrar por vaga" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas as vagas</SelectItem>
-                {jobs.map((job: any) => (
-                  <SelectItem key={job.id} value={job.id}>
-                    {job.profession?.name || job.title} - {job.company?.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {jobs.length === 0 ? (
+              <div className="text-sm text-muted-foreground">
+                Nenhuma vaga cadastrada. Crie uma vaga primeiro para usar o Kanban.
+              </div>
+            ) : (
+              <Select value={selectedJobFilter} onValueChange={setSelectedJobFilter}>
+                <SelectTrigger className="w-[300px]" data-testid="select-job-filter">
+                  <SelectValue placeholder="Selecione uma vaga" />
+                </SelectTrigger>
+                <SelectContent>
+                  {jobs.map((job: any) => (
+                    <SelectItem key={job.id} value={job.id}>
+                      {job.profession?.name || job.title} - {job.company?.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </div>
 

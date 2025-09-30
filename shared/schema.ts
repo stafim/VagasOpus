@@ -491,6 +491,7 @@ export const insertJobSchema = z.object({
   description: z.string().optional(),
   requirements: z.string().optional(),
   costCenterId: z.string().optional(),
+  recruiterId: z.string().optional(),
   department: z.string().optional(),
   location: z.string().optional(),
   contractType: z.enum(["clt", "pj", "freelancer", "estagio", "temporario"]).default("clt"),
@@ -499,6 +500,30 @@ export const insertJobSchema = z.object({
   status: z.enum(["draft", "active", "paused", "closed", "expired", "aberto", "em_recrutamento", "em_documentacao"]).default("draft"),
   createdBy: z.string().optional(),
   expiresAt: z.string().optional(),
+  
+  // Novos campos detalhados
+  openingDate: z.string().optional(),
+  startDate: z.string().optional(),
+  openingReason: z.enum(["substituicao", "aumento_quadro"]).optional(),
+  ageRangeMin: z.number().optional(),
+  ageRangeMax: z.number().optional(),
+  specifications: z.string().optional(),
+  clientId: z.string().optional(),
+  vacancyQuantity: z.number().optional(),
+  gender: z.enum(["masculino", "feminino", "indiferente"]).optional(),
+  workScale: z.enum(["5x1", "5x2", "6x1", "12x36", "outro"]).optional(),
+  workHours: z.string().optional(),
+  
+  // Remuneração e benefícios
+  bonus: z.string().optional(),
+  hasHazardPay: z.boolean().optional(),
+  unhealthinessLevel: z.enum(["nao", "10", "20", "40"]).optional(),
+  
+  // Benefícios
+  hasMealVoucher: z.boolean().optional(),
+  hasFoodVoucher: z.boolean().optional(),
+  hasTransportVoucher: z.boolean().optional(),
+  hasHealthInsurance: z.boolean().optional(),
 });
 
 export const insertApplicationSchema = createInsertSchema(applications).omit({

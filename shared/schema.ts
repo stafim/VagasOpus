@@ -66,6 +66,22 @@ export const costCenters = pgTable("cost_centers", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Clients table
+export const clients = pgTable("clients", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name", { length: 255 }).notNull(),
+  contactPerson: varchar("contact_person", { length: 255 }),
+  phone: varchar("phone", { length: 20 }),
+  email: varchar("email", { length: 255 }),
+  address: text("address"),
+  city: varchar("city", { length: 100 }),
+  state: varchar("state", { length: 2 }),
+  notes: text("notes"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Job status enum
 export const jobStatusEnum = pgEnum("job_status", [
   "draft",
@@ -179,7 +195,7 @@ export const jobs = pgTable("jobs", {
   ageRangeMin: integer("age_range_min"), // Idade mínima
   ageRangeMax: integer("age_range_max"), // Idade máxima
   specifications: text("specifications"), // Especificações detalhadas
-  clientName: varchar("client_name", { length: 255 }), // Cliente
+  clientId: varchar("client_id").references(() => clients.id), // Cliente
   vacancyQuantity: integer("vacancy_quantity").default(1), // Quantidade de vagas
   gender: genderEnum("gender").default("indiferente"), // Sexo
   workScale: workScaleEnum("work_scale"), // Escala de trabalho
@@ -463,6 +479,12 @@ export const insertCostCenterSchema = createInsertSchema(costCenters).omit({
   updatedAt: true,
 });
 
+export const insertClientSchema = createInsertSchema(clients).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertJobSchema = z.object({
   professionId: z.string().min(1, "Profissão é obrigatória"),
   companyId: z.string().min(1, "Empresa é obrigatória"),
@@ -532,6 +554,9 @@ export type InsertCompany = z.infer<typeof insertCompanySchema>;
 
 export type CostCenter = typeof costCenters.$inferSelect;
 export type InsertCostCenter = z.infer<typeof insertCostCenterSchema>;
+
+export type Client = typeof clients.$inferSelect;
+export type InsertClient = z.infer<typeof insertClientSchema>;
 
 export type Job = typeof jobs.$inferSelect;
 export type InsertJob = z.infer<typeof insertJobSchema>;

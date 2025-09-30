@@ -50,6 +50,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 const statusLabels: Record<string, string> = {
   active: "Ativa",
@@ -76,6 +77,7 @@ export default function Jobs() {
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   // Fetch companies for filter
   const { data: companies } = useQuery<any[]>({
@@ -138,6 +140,26 @@ export default function Jobs() {
     },
   });
 
+  const assignRecruiterMutation = useMutation({
+    mutationFn: async ({ jobId, userId }: { jobId: string; userId: string }) => {
+      await apiRequest("PATCH", `/api/jobs/${jobId}`, { recruiterId: userId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
+      toast({
+        title: "Sucesso",
+        description: "Vaga atribuída com sucesso!",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Erro ao atribuir vaga. Tente novamente.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const statusVariants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
     active: "default",
     draft: "secondary", 
@@ -169,6 +191,12 @@ export default function Jobs() {
 
   const handleDeleteJob = (jobId: string) => {
     deleteJobMutation.mutate(jobId);
+  };
+
+  const handleAssignToMe = (jobId: string) => {
+    if (user?.id) {
+      assignRecruiterMutation.mutate({ jobId, userId: user.id });
+    }
   };
 
   return (
@@ -383,7 +411,13 @@ export default function Jobs() {
                             >
                               <Edit className="h-4 w-4 text-primary" />
                             </Button>
-                            <Button variant="ghost" size="sm">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleAssignToMe(job.id)}
+                              title="Assumir esta vaga"
+                              data-testid={`button-assign-${job.id}`}
+                            >
                               <Users className="h-4 w-4 text-green-600" />
                             </Button>
                             <Button variant="ghost" size="sm">

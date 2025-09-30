@@ -1,12 +1,39 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import TopBar from "@/components/TopBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Users, Mail, Phone, Briefcase, Clock } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Users, Mail, Phone, Briefcase, Clock, Plus, Filter } from "lucide-react";
 
 const KANBAN_STAGES = [
   { id: "entrevista_inicial", label: "Entrevista Inicial", color: "bg-blue-500" },
@@ -34,13 +61,95 @@ interface Application {
   };
 }
 
+const candidateFormSchema = z.object({
+  candidateName: z.string().min(3, "Nome completo é obrigatório"),
+  candidateEmail: z.string().email("E-mail inválido"),
+  candidatePhone: z.string().optional(),
+  jobId: z.string().min(1, "Vaga é obrigatória"),
+});
+
+type CandidateFormData = z.infer<typeof candidateFormSchema>;
+
 export default function Kanban() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [draggedItem, setDraggedItem] = useState<Application | null>(null);
+  const [showCandidateModal, setShowCandidateModal] = useState(false);
+  const [location] = useLocation();
+  const [selectedJobFilter, setSelectedJobFilter] = useState<string>("");
+
+  // Parse jobId from URL query string
+  const urlParams = new URLSearchParams(location.split('?')[1] || '');
+  const jobIdFromUrl = urlParams.get('jobId');
 
   const { data: applications = [], isLoading } = useQuery<Application[]>({
-    queryKey: ["/api/applications"],
+    queryKey: ["/api/applications", selectedJobFilter],
+    queryFn: async () => {
+      const queryParams = new URLSearchParams();
+      if (selectedJobFilter && selectedJobFilter !== "all") {
+        queryParams.set('jobId', selectedJobFilter);
+      }
+      const queryString = queryParams.toString();
+      const applicationsUrl = `/api/applications${queryString ? `?${queryString}` : ''}`;
+      
+      const response = await fetch(applicationsUrl, { credentials: "include" });
+      if (!response.ok) {
+        throw new Error(`${response.status}: ${response.statusText}`);
+      }
+      return await response.json();
+    },
+  });
+
+  const { data: jobs = [] } = useQuery<any[]>({
+    queryKey: ["/api/jobs"],
+  });
+
+  useEffect(() => {
+    if (jobIdFromUrl) {
+      setSelectedJobFilter(jobIdFromUrl);
+    }
+  }, [jobIdFromUrl]);
+
+  const form = useForm<CandidateFormData>({
+    resolver: zodResolver(candidateFormSchema),
+    defaultValues: {
+      candidateName: "",
+      candidateEmail: "",
+      candidatePhone: "",
+      jobId: jobIdFromUrl || "",
+    },
+  });
+
+  useEffect(() => {
+    if (jobIdFromUrl) {
+      form.setValue("jobId", jobIdFromUrl);
+    }
+  }, [jobIdFromUrl, form]);
+
+  const createCandidateMutation = useMutation({
+    mutationFn: async (data: CandidateFormData) => {
+      const response = await apiRequest("POST", "/api/applications", {
+        ...data,
+        kanbanStage: "entrevista_inicial", // Start at first stage
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/applications"] });
+      toast({
+        title: "Sucesso",
+        description: "Candidato criado com sucesso!",
+      });
+      setShowCandidateModal(false);
+      form.reset();
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Erro ao criar candidato. Tente novamente.",
+        variant: "destructive",
+      });
+    },
   });
 
   const updateStageMutation = useMutation({
@@ -98,11 +207,52 @@ export default function Kanban() {
     });
   };
 
+  const onSubmit = (data: CandidateFormData) => {
+    createCandidateMutation.mutate(data);
+  };
+
+  const handleOpenModal = () => {
+    if (jobIdFromUrl) {
+      form.setValue("jobId", jobIdFromUrl);
+    }
+    setShowCandidateModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowCandidateModal(false);
+    form.reset();
+  };
+
   return (
     <>
-      <TopBar title="Kanban de Candidatos" />
+      <TopBar 
+        title="Kanban de Candidatos"
+        showCreateButton
+        onCreateClick={handleOpenModal}
+        createButtonText="Novo Candidato"
+      />
 
       <div className="space-y-6">
+        {/* Filter by Job */}
+        <div className="bg-card p-4 rounded-lg border border-border">
+          <div className="flex items-center gap-4">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={selectedJobFilter} onValueChange={setSelectedJobFilter}>
+              <SelectTrigger className="w-[300px]" data-testid="select-job-filter">
+                <SelectValue placeholder="Filtrar por vaga" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as vagas</SelectItem>
+                {jobs.map((job: any) => (
+                  <SelectItem key={job.id} value={job.id}>
+                    {job.profession?.name || job.title} - {job.company?.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           {KANBAN_STAGES.map((stage) => {
@@ -221,6 +371,111 @@ export default function Kanban() {
           })}
         </div>
       </div>
+
+      {/* Candidate Modal */}
+      <Dialog open={showCandidateModal} onOpenChange={handleCloseModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Novo Candidato</DialogTitle>
+          </DialogHeader>
+
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="candidateName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome Completo *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="João da Silva" {...field} data-testid="input-candidate-name" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="candidateEmail"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>E-mail *</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="email" 
+                        placeholder="joao@example.com" 
+                        {...field} 
+                        data-testid="input-candidate-email" 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="candidatePhone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Telefone</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="(11) 99999-9999" 
+                        {...field} 
+                        data-testid="input-candidate-phone" 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="jobId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Vaga *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-job">
+                          <SelectValue placeholder="Selecione a vaga" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {jobs.map((job: any) => (
+                          <SelectItem key={job.id} value={job.id}>
+                            {job.profession?.name || job.title} - {job.company?.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex items-center justify-end space-x-4 pt-4">
+                <Button type="button" variant="outline" onClick={handleCloseModal} data-testid="button-cancel">
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createCandidateMutation.isPending}
+                  data-testid="button-save"
+                >
+                  {createCandidateMutation.isPending && (
+                    <i className="fas fa-spinner fa-spin mr-2"></i>
+                  )}
+                  Criar Candidato
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

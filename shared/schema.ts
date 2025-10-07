@@ -90,6 +90,7 @@ export const jobStatusEnum = pgEnum("job_status", [
   "closed",
   "expired",
   "aberto",
+  "aprovada",
   "em_recrutamento",
   "em_documentacao"
 ]);

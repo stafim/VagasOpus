@@ -34,6 +34,21 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const jobFormSchema = z.object({
   professionId: z.string().min(1, "Profissão é obrigatória"),
@@ -45,7 +60,7 @@ const jobFormSchema = z.object({
   department: z.string().optional().default(""),
   location: z.string().optional().default(""),
   contractType: z.enum(["clt", "pj", "freelancer", "estagio", "temporario"]).default("clt"),
-  status: z.enum(["draft", "active", "paused", "closed", "expired", "aberto", "em_recrutamento", "em_documentacao"]).default("draft"),
+  status: z.enum(["draft", "active", "paused", "closed", "expired", "aberto", "aprovada", "em_recrutamento", "em_documentacao"]).default("draft"),
   
   // Novos campos detalhados
   openingDate: z.string().optional(),
@@ -85,6 +100,7 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
   const queryClient = useQueryClient();
   const isEditing = !!jobId;
   const [cities] = useState(getAllCities());
+  const [professionPopoverOpen, setProfessionPopoverOpen] = useState(false);
 
   const { data: companies } = useQuery<CompaniesListResponse>({
     queryKey: ["/api/companies"],
@@ -276,30 +292,86 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
                 <FormField
                   control={form.control}
                   name="professionId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Profissão *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger data-testid="select-profession">
-                            <SelectValue placeholder="Selecione uma profissão" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {Array.isArray(professions) && professions
-                            .filter(profession => profession.isActive)
-                            .sort((a, b) => (a.category || "").localeCompare(b.category || "") || a.name.localeCompare(b.name))
-                            .map((profession) => (
-                              <SelectItem key={profession.id} value={profession.id}>
-                                <span className="text-xs text-muted-foreground mr-2">{profession.category}</span>
-                                {profession.name}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const activeProfessions = Array.isArray(professions) 
+                      ? professions.filter(p => p.isActive).sort((a, b) => 
+                          (a.category || "").localeCompare(b.category || "") || a.name.localeCompare(b.name)
+                        )
+                      : [];
+                    
+                    const selectedProfession = activeProfessions.find(p => p.id === field.value);
+                    
+                    return (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Profissão *</FormLabel>
+                        <Popover open={professionPopoverOpen} onOpenChange={setProfessionPopoverOpen}>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                data-testid="select-profession"
+                                className={cn(
+                                  "w-full justify-between",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {selectedProfession ? (
+                                  <>
+                                    <span className="text-xs text-muted-foreground mr-2">
+                                      {selectedProfession.category}
+                                    </span>
+                                    {selectedProfession.name}
+                                  </>
+                                ) : (
+                                  "Digite para buscar uma profissão..."
+                                )}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[400px] p-0">
+                            <Command>
+                              <CommandInput 
+                                placeholder="Buscar profissão..." 
+                                data-testid="input-search-profession"
+                              />
+                              <CommandList>
+                                <CommandEmpty>Nenhuma profissão encontrada.</CommandEmpty>
+                                <CommandGroup>
+                                  {activeProfessions.map((profession) => (
+                                    <CommandItem
+                                      key={profession.id}
+                                      value={`${profession.category} ${profession.name}`}
+                                      onSelect={() => {
+                                        form.setValue("professionId", profession.id);
+                                        setProfessionPopoverOpen(false);
+                                      }}
+                                      data-testid={`profession-option-${profession.id}`}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          profession.id === field.value
+                                            ? "opacity-100"
+                                            : "opacity-0"
+                                        )}
+                                      />
+                                      <span className="text-xs text-muted-foreground mr-2">
+                                        {profession.category}
+                                      </span>
+                                      {profession.name}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
 
                 {selectedProfession?.union && (

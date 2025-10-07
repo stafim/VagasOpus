@@ -139,7 +139,9 @@ export const roleTypeEnum = pgEnum("role_type", [
   "hr_manager", 
   "recruiter",
   "interviewer",
-  "viewer"
+  "viewer",
+  "approver",
+  "manager"
 ]);
 
 export const permissionTypeEnum = pgEnum("permission_type", [

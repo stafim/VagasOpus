@@ -19,7 +19,9 @@ const roleLabels = {
   hr_manager: "Gerente RH", 
   recruiter: "Recrutador",
   interviewer: "Entrevistador",
-  viewer: "Visualizador"
+  viewer: "Visualizador",
+  approver: "Aprovador",
+  manager: "Gestor"
 };
 
 const roleColors = {
@@ -27,7 +29,9 @@ const roleColors = {
   hr_manager: "bg-blue-100 text-blue-800",
   recruiter: "bg-green-100 text-green-800", 
   interviewer: "bg-yellow-100 text-yellow-800",
-  viewer: "bg-gray-100 text-gray-800"
+  viewer: "bg-gray-100 text-gray-800",
+  approver: "bg-purple-100 text-purple-800",
+  manager: "bg-orange-100 text-orange-800"
 };
 
 export default function Permissions() {

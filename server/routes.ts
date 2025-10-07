@@ -373,7 +373,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const companyId = req.query.companyId as string;
       const professionId = req.query.professionId as string;
       
-      const jobs = await storage.getJobs(limit, offset, search, status, companyId, professionId);
+      let jobs = await storage.getJobs(limit, offset, search, status, companyId, professionId);
+      
+      // Filter jobs based on user role
+      const user = req.session?.user;
+      if (user && user.role === 'recruiter') {
+        // Recruiters cannot see jobs with status "aprovada" or "aberto"
+        jobs = jobs.filter((job: any) => 
+          job.status !== 'aprovada' && job.status !== 'aberto'
+        );
+      }
+      
       res.json(jobs);
     } catch (error) {
       console.error("Error fetching jobs:", error);

@@ -25,6 +25,7 @@ const statusLabels: Record<string, string> = {
   closed: "Fechada",
   expired: "Expirada",
   aberto: "Aberto",
+  aprovada: "Aprovada",
   em_recrutamento: "Em Recrutamento",
   em_documentacao: "Em Documentação"
 };
@@ -36,6 +37,7 @@ const statusVariants: Record<string, "default" | "secondary" | "destructive" | "
   closed: "destructive",
   expired: "destructive",
   aberto: "default",
+  aprovada: "default",
   em_recrutamento: "outline",
   em_documentacao: "secondary"
 };
@@ -124,6 +126,9 @@ export default function JobStatusSelect({ jobId, currentStatus, onStatusChange }
           </SelectItem>
           <SelectItem value="aberto" data-testid="status-option-aberto">
             {statusLabels.aberto}
+          </SelectItem>
+          <SelectItem value="aprovada" data-testid="status-option-aprovada">
+            {statusLabels.aprovada}
           </SelectItem>
           <SelectItem value="em_recrutamento" data-testid="status-option-em_recrutamento">
             {statusLabels.em_recrutamento}

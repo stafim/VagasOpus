@@ -56,10 +56,11 @@ export interface IStorage {
   // User operations (mandatory for Replit Auth)
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
+  getUsers(): Promise<User[]>;
   
   // Authentication operations (for local auth)
   getUserByEmail(email: string): Promise<User | undefined>;
-  createUser(user: { email: string; passwordHash: string; firstName?: string; lastName?: string }): Promise<User>;
+  createUser(user: { email: string; passwordHash: string; firstName?: string; lastName?: string; role?: string }): Promise<User>;
   updateUserPassword(id: string, passwordHash: string): Promise<User>;
   getRecruiters(): Promise<User[]>;
   
@@ -199,13 +200,18 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async getUsers(): Promise<User[]> {
+    const allUsers = await db.select().from(users).orderBy(desc(users.createdAt));
+    return allUsers;
+  }
+
   // Authentication operations (for local auth)
   async getUserByEmail(email: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.email, email));
     return user;
   }
 
-  async createUser(user: { email: string; passwordHash: string; firstName?: string; lastName?: string }): Promise<User> {
+  async createUser(user: { email: string; passwordHash: string; firstName?: string; lastName?: string; role?: string }): Promise<User> {
     const [newUser] = await db
       .insert(users)
       .values(user)

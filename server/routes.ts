@@ -112,6 +112,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Users routes
+  app.get('/api/users', isAuthenticated, async (req, res) => {
+    try {
+      const users = await storage.getUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  app.post('/api/users', isAuthenticated, async (req, res) => {
+    try {
+      const userData = req.body;
+      
+      // Check if email already exists
+      const existingUser = await storage.getUserByEmail(userData.email);
+      if (existingUser) {
+        return res.status(400).json({ message: "Email already in use" });
+      }
+      
+      // Create user with default password hash (should be changed on first login)
+      const bcrypt = await import('bcrypt');
+      const defaultPasswordHash = await bcrypt.hash('changeme123', 10);
+      
+      const newUser = await storage.createUser({
+        email: userData.email,
+        passwordHash: defaultPasswordHash,
+        firstName: userData.name,
+        lastName: userData.name, // Using name for both first and last
+        role: userData.role || 'user'
+      });
+      
+      res.status(201).json(newUser);
+    } catch (error) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ message: "Failed to create user" });
+    }
+  });
+
   app.get('/api/professions/categories/:category', isAuthenticated, async (req, res) => {
     try {
       const { category } = req.params;

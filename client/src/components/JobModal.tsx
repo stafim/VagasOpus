@@ -60,6 +60,7 @@ const jobFormSchema = z.object({
   department: z.string().optional().default(""),
   location: z.string().optional().default(""),
   contractType: z.enum(["clt", "pj", "freelancer", "estagio", "temporario"]).default("clt"),
+  jobType: z.enum(["produtiva", "improdutiva"]).optional(),
   status: z.enum(["draft", "active", "paused", "closed", "expired", "aberto", "aprovada", "em_recrutamento", "em_documentacao"]).default("draft"),
   
   // Novos campos detalhados
@@ -158,6 +159,7 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
         costCenterId: jobData.costCenterId || undefined,
         recruiterId: jobData.recruiterId || "",
         contractType: jobData.contractType || "clt",
+        jobType: jobData.jobType || undefined,
         status: jobData.status || "draft",
         salaryMin: jobData.salaryMin || "",
         salaryMax: jobData.salaryMax || "",
@@ -650,6 +652,28 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
                           <SelectItem value="freelancer">Freelancer</SelectItem>
                           <SelectItem value="estagio">Estágio</SelectItem>
                           <SelectItem value="temporario">Temporário</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="jobType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo de Vaga</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-job-type">
+                            <SelectValue placeholder="Selecione o tipo" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="produtiva">PRODUTIVA - Faturar</SelectItem>
+                          <SelectItem value="improdutiva">IMPRODUTIVA - Sem faturar</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />

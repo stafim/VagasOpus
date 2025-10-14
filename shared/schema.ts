@@ -134,6 +134,12 @@ export const unhealthinessEnum = pgEnum("unhealthiness_level", [
   "40"
 ]);
 
+// Job type enum
+export const jobTypeEnum = pgEnum("job_type", [
+  "produtiva",
+  "improdutiva"
+]);
+
 // Permission system enums
 export const roleTypeEnum = pgEnum("role_type", [
   "admin",
@@ -190,6 +196,7 @@ export const jobs = pgTable("jobs", {
   department: varchar("department"),
   location: varchar("location"),
   contractType: contractTypeEnum("contract_type").default("clt"),
+  jobType: jobTypeEnum("job_type"), // Tipo de vaga: produtiva (faturar) ou improdutiva (sem faturar)
   
   // Novos campos detalhados da vaga
   openingDate: timestamp("opening_date"), // Data de abertura da vaga
@@ -520,6 +527,7 @@ export const insertJobSchema = z.object({
   department: z.string().optional(),
   location: z.string().optional(),
   contractType: z.enum(["clt", "pj", "freelancer", "estagio", "temporario"]).default("clt"),
+  jobType: z.enum(["produtiva", "improdutiva"]).optional(),
   salaryMin: z.string().optional(),
   salaryMax: z.string().optional(),
   status: z.enum(["draft", "active", "paused", "closed", "expired", "aberto", "aprovada", "em_recrutamento", "em_documentacao"]).default("draft"),

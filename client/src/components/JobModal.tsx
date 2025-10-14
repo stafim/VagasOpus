@@ -53,7 +53,6 @@ import { cn } from "@/lib/utils";
 const jobFormSchema = z.object({
   professionId: z.string().min(1, "Profissão é obrigatória"),
   description: z.string().optional().default(""),
-  requirements: z.string().optional().default(""),
   companyId: z.string().optional(),
   costCenterId: z.string().optional(),
   recruiterId: z.string().optional(),
@@ -129,7 +128,6 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
     defaultValues: {
       professionId: "",
       description: "",
-      requirements: "",
       recruiterId: "",
       department: "",
       location: "",
@@ -152,7 +150,6 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
       form.reset({
         professionId: jobData.professionId || "",
         description: jobData.description || "",
-        requirements: jobData.requirements || "",
         department: jobData.department || "",
         location: jobData.location || "",
         companyId: jobData.companyId || undefined,
@@ -745,27 +742,6 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
                           className="min-h-[100px]"
                           {...field}
                           data-testid="input-description"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="mt-4">
-                <FormField
-                  control={form.control}
-                  name="requirements"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Requisitos</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Liste os requisitos necessários para a vaga..."
-                          className="min-h-[100px]"
-                          {...field}
-                          data-testid="input-requirements"
                         />
                       </FormControl>
                       <FormMessage />

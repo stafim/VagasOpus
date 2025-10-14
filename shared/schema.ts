@@ -522,7 +522,6 @@ export const insertJobSchema = z.object({
   professionId: z.string().min(1, "Profissão é obrigatória"),
   companyId: z.string().min(1, "Empresa é obrigatória"),
   description: z.string().optional(),
-  requirements: z.string().optional(),
   costCenterId: z.string().optional(),
   recruiterId: z.string().optional(),
   department: z.string().optional(),

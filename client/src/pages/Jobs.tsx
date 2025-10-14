@@ -65,6 +65,24 @@ const statusLabels: Record<string, string> = {
   em_documentacao: "Em Documentação"
 };
 
+// Calculate SLA progress
+const calculateSLA = (createdAt: string, slaDeadline: string) => {
+  const created = new Date(createdAt);
+  const deadline = new Date(slaDeadline);
+  const now = new Date();
+  
+  const totalDays = 14; // SLA é de 14 dias
+  const daysPassed = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
+  const percentage = Math.min((daysPassed / totalDays) * 100, 100);
+  
+  return {
+    daysPassed,
+    totalDays,
+    percentage: Math.round(percentage),
+    isOverdue: now > deadline
+  };
+};
+
 export default function Jobs() {
   const [showJobModal, setShowJobModal] = useState(false);
   const [editingJobId, setEditingJobId] = useState<string | undefined>();
@@ -341,6 +359,7 @@ export default function Jobs() {
                     <TableHead>Status</TableHead>
                     <TableHead>Candidatos</TableHead>
                     <TableHead>Salário</TableHead>
+                    <TableHead>SLA (14 dias)</TableHead>
                     <TableHead>Criado em</TableHead>
                     <TableHead>Ações</TableHead>
                   </TableRow>
@@ -404,6 +423,36 @@ export default function Jobs() {
                           <div className="text-sm">
                             {formatSalary(job.salaryMin, job.salaryMax)}
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          {job.slaDeadline ? (
+                            (() => {
+                              const sla = calculateSLA(job.createdAt, job.slaDeadline);
+                              return (
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-2">
+                                    <div className="text-sm font-medium" style={{ color: sla.isOverdue ? '#ef4444' : sla.percentage > 80 ? '#f59e0b' : '#10b981' }}>
+                                      {sla.percentage}%
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                      ({sla.daysPassed}/{sla.totalDays} dias)
+                                    </div>
+                                  </div>
+                                  <div className="w-full bg-gray-200 rounded-full h-1.5">
+                                    <div 
+                                      className="h-1.5 rounded-full transition-all"
+                                      style={{ 
+                                        width: `${sla.percentage}%`,
+                                        backgroundColor: sla.isOverdue ? '#ef4444' : sla.percentage > 80 ? '#f59e0b' : '#10b981'
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            })()
+                          ) : (
+                            <span className="text-xs text-muted-foreground">N/A</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           <div className="text-sm text-muted-foreground">

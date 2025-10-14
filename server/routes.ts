@@ -408,9 +408,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/jobs', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user?.id || (req.session as any).user?.id;
+      
+      // Calculate SLA deadline (14 days from now)
+      const slaDeadline = new Date();
+      slaDeadline.setDate(slaDeadline.getDate() + 14);
+      
       const validatedData = insertJobSchema.parse({
         ...req.body,
         createdBy: userId,
+        slaDeadline: slaDeadline.toISOString(),
       });
       
       // Validate profession exists and is active  

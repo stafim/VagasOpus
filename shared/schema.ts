@@ -227,6 +227,7 @@ export const jobs = pgTable("jobs", {
   status: jobStatusEnum("status").default("draft"),
   createdBy: varchar("created_by").references(() => users.id),
   expiresAt: timestamp("expires_at"),
+  slaDeadline: timestamp("sla_deadline"), // SLA de 14 dias para fechamento da vaga
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -533,6 +534,7 @@ export const insertJobSchema = z.object({
   status: z.enum(["draft", "active", "paused", "closed", "expired", "aberto", "aprovada", "em_recrutamento", "em_documentacao"]).default("draft"),
   createdBy: z.string().optional(),
   expiresAt: z.string().optional(),
+  slaDeadline: z.string().optional(),
   
   // Novos campos detalhados
   openingDate: z.string().optional(),

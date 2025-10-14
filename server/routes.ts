@@ -487,7 +487,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user?.id || (req.session as any).user?.id;
       
       // Validate status
-      const validStatuses = ["draft", "active", "paused", "closed", "expired", "aberto", "em_recrutamento", "em_documentacao"];
+      const validStatuses = ["draft", "active", "paused", "closed", "expired", "aberto", "aprovada", "em_recrutamento", "em_documentacao"];
       if (!status || !validStatuses.includes(status)) {
         return res.status(400).json({ message: "Invalid status provided" });
       }

@@ -202,6 +202,7 @@ export const jobs = pgTable("jobs", {
   openingDate: timestamp("opening_date"), // Data de abertura da vaga
   startDate: timestamp("start_date"), // Data de início
   openingReason: jobReasonEnum("opening_reason"), // Motivo: substituição ou aumento de quadro
+  replacementEmployeeName: varchar("replacement_employee_name", { length: 255 }), // Nome do colaborador a ser substituído (quando motivo = substituição)
   ageRangeMin: integer("age_range_min"), // Idade mínima
   ageRangeMax: integer("age_range_max"), // Idade máxima
   specifications: text("specifications"), // Especificações detalhadas
@@ -539,6 +540,7 @@ export const insertJobSchema = z.object({
   openingDate: z.string().optional(),
   startDate: z.string().optional(),
   openingReason: z.enum(["substituicao", "aumento_quadro"]).optional(),
+  replacementEmployeeName: z.string().optional(),
   ageRangeMin: z.number().optional(),
   ageRangeMax: z.number().optional(),
   specifications: z.string().optional(),

@@ -66,6 +66,7 @@ const jobFormSchema = z.object({
   openingDate: z.string().optional(),
   startDate: z.string().optional(),
   openingReason: z.enum(["substituicao", "aumento_quadro"]).optional(),
+  replacementEmployeeName: z.string().optional(),
   ageRangeMin: z.string().optional(),
   ageRangeMax: z.string().optional(),
   specifications: z.string().optional(),
@@ -163,6 +164,7 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
         openingDate: jobData.openingDate ? new Date(jobData.openingDate).toISOString().split('T')[0] : undefined,
         startDate: jobData.startDate ? new Date(jobData.startDate).toISOString().split('T')[0] : undefined,
         openingReason: jobData.openingReason || undefined,
+        replacementEmployeeName: jobData.replacementEmployeeName || "",
         ageRangeMin: jobData.ageRangeMin?.toString() || "",
         ageRangeMax: jobData.ageRangeMax?.toString() || "",
         specifications: jobData.specifications || "",
@@ -190,6 +192,9 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
   // Watch professionId to show union
   const selectedProfessionId = form.watch("professionId");
   const selectedProfession = professions?.find(p => p.id === selectedProfessionId);
+
+  // Watch openingReason to show replacement employee field
+  const openingReason = form.watch("openingReason");
 
   const createJobMutation = useMutation({
     mutationFn: async (data: JobFormData) => {
@@ -514,6 +519,26 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
                     </FormItem>
                   )}
                 />
+
+                {openingReason === "substituicao" && (
+                  <FormField
+                    control={form.control}
+                    name="replacementEmployeeName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome do Colaborador a Substituir</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Digite o nome do colaborador" 
+                            {...field} 
+                            data-testid="input-replacement-employee" 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 <FormField
                   control={form.control}

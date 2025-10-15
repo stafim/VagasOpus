@@ -73,7 +73,7 @@ const jobFormSchema = z.object({
   clientId: z.string().optional(),
   vacancyQuantity: z.string().optional().default("1"),
   gender: z.enum(["masculino", "feminino", "indiferente"]).default("indiferente"),
-  workScale: z.enum(["5x1", "5x2", "6x1", "12x36", "outro"]).optional(),
+  workScaleId: z.string().optional(),
   workHours: z.string().optional(),
   
   salaryMin: z.string().optional().default(""),
@@ -117,6 +117,10 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
 
   const { data: recruiters } = useQuery({
     queryKey: ["/api/recruiters"],
+  });
+
+  const { data: workScales } = useQuery({
+    queryKey: ["/api/work-scales"],
   });
 
   const { data: jobData } = useQuery<JobWithDetails>({
@@ -171,7 +175,7 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
         clientId: jobData.clientId || "",
         vacancyQuantity: jobData.vacancyQuantity?.toString() || "1",
         gender: jobData.gender || "indiferente",
-        workScale: jobData.workScale || undefined,
+        workScaleId: jobData.workScaleId || undefined,
         workHours: jobData.workHours || "",
         bonus: jobData.bonus || "",
         hasHazardPay: jobData.hasHazardPay || false,
@@ -784,7 +788,7 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="workScale"
+                  name="workScaleId"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Escala de Trabalho</FormLabel>
@@ -795,11 +799,11 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="5x1">5x1</SelectItem>
-                          <SelectItem value="5x2">5x2</SelectItem>
-                          <SelectItem value="6x1">6x1</SelectItem>
-                          <SelectItem value="12x36">12x36</SelectItem>
-                          <SelectItem value="outro">Outro</SelectItem>
+                          {workScales?.map((scale: any) => (
+                            <SelectItem key={scale.id} value={scale.id}>
+                              {scale.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />

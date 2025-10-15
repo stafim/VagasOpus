@@ -9,7 +9,6 @@ import {
   UserCheck,
   Users, 
   Shield, 
-  TrendingUp, 
   FileText,
   Settings,
   HelpCircle,
@@ -61,12 +60,6 @@ const navigationItems = [
     href: "/permissions",
     icon: Shield,
     description: "Controle de acesso"
-  },
-  {
-    name: "Desempenho",
-    href: "/performance",
-    icon: TrendingUp,
-    description: "Métricas e KPIs"
   },
   {
     name: "Relatórios",

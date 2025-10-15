@@ -14,6 +14,8 @@ import {
   rolePermissions,
   professions,
   workScales,
+  benefits,
+  jobBenefits,
   type User,
   type UpsertUser,
   type InsertUser,
@@ -99,6 +101,13 @@ export interface IStorage {
   createWorkScale(workScale: any): Promise<any>;
   updateWorkScale(id: string, workScale: Partial<any>): Promise<any>;
   deleteWorkScale(id: string): Promise<void>;
+
+  // Benefit operations
+  getBenefits(includeInactive?: boolean): Promise<any[]>;
+  getBenefit(id: string): Promise<any | undefined>;
+  createBenefit(benefit: any): Promise<any>;
+  updateBenefit(id: string, benefit: Partial<any>): Promise<any>;
+  deleteBenefit(id: string): Promise<void>;
 
   // Candidate operations
   getCandidates(): Promise<Candidate[]>;
@@ -435,6 +444,39 @@ export class DatabaseStorage implements IStorage {
     await db.update(workScales)
       .set({ isActive: false, updatedAt: new Date() })
       .where(eq(workScales.id, id));
+  }
+
+  // Benefit operations
+  async getBenefits(includeInactive = false): Promise<any[]> {
+    if (includeInactive) {
+      return await db.select().from(benefits).orderBy(benefits.name);
+    }
+    return await db.select().from(benefits).where(eq(benefits.isActive, true)).orderBy(benefits.name);
+  }
+
+  async getBenefit(id: string): Promise<any | undefined> {
+    const [benefit] = await db.select().from(benefits).where(eq(benefits.id, id));
+    return benefit;
+  }
+
+  async createBenefit(benefit: any): Promise<any> {
+    const [newBenefit] = await db.insert(benefits).values(benefit).returning();
+    return newBenefit;
+  }
+
+  async updateBenefit(id: string, benefit: Partial<any>): Promise<any> {
+    const [updatedBenefit] = await db
+      .update(benefits)
+      .set({ ...benefit, updatedAt: new Date() })
+      .where(eq(benefits.id, id))
+      .returning();
+    return updatedBenefit;
+  }
+
+  async deleteBenefit(id: string): Promise<void> {
+    await db.update(benefits)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(benefits.id, id));
   }
 
   // Candidate operations

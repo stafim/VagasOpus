@@ -235,6 +235,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Benefit routes
+  app.get('/api/benefits', isAuthenticated, async (req, res) => {
+    try {
+      const includeInactive = req.query.includeInactive === 'true';
+      const benefits = await storage.getBenefits(includeInactive);
+      res.json(benefits);
+    } catch (error) {
+      console.error("Error fetching benefits:", error);
+      res.status(500).json({ message: "Failed to fetch benefits" });
+    }
+  });
+
+  app.get('/api/benefits/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const benefit = await storage.getBenefit(id);
+      if (!benefit) {
+        return res.status(404).json({ message: "Benefit not found" });
+      }
+      res.json(benefit);
+    } catch (error) {
+      console.error("Error fetching benefit:", error);
+      res.status(500).json({ message: "Failed to fetch benefit" });
+    }
+  });
+
+  app.post('/api/benefits', isAuthenticated, async (req, res) => {
+    try {
+      const benefit = await storage.createBenefit(req.body);
+      res.status(201).json(benefit);
+    } catch (error) {
+      console.error("Error creating benefit:", error);
+      res.status(500).json({ message: "Failed to create benefit" });
+    }
+  });
+
+  app.put('/api/benefits/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const benefit = await storage.updateBenefit(id, req.body);
+      res.json(benefit);
+    } catch (error) {
+      console.error("Error updating benefit:", error);
+      res.status(500).json({ message: "Failed to update benefit" });
+    }
+  });
+
+  app.delete('/api/benefits/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteBenefit(id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting benefit:", error);
+      res.status(500).json({ message: "Failed to delete benefit" });
+    }
+  });
+
   // Company routes
   app.get('/api/companies', isAuthenticated, async (req, res) => {
     try {

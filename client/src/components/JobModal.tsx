@@ -837,7 +837,7 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
                   name="salaryMin"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Salário Mínimo (R$)</FormLabel>
+                      <FormLabel>Valor Salário (R$)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"

@@ -224,7 +224,6 @@ export const jobs = pgTable("jobs", {
   
   // Remuneração e benefícios
   salaryMin: decimal("salary_min", { precision: 10, scale: 2 }),
-  salaryMax: decimal("salary_max", { precision: 10, scale: 2 }),
   bonus: decimal("bonus", { precision: 10, scale: 2 }), // Gratificação
   hasHazardPay: boolean("has_hazard_pay").default(false), // Periculosidade
   unhealthinessLevel: unhealthinessEnum("unhealthiness_level").default("nao"), // Insalubridade
@@ -546,7 +545,6 @@ export const insertJobSchema = z.object({
   contractType: z.enum(["clt", "pj", "freelancer", "estagio", "temporario"]).default("clt"),
   jobType: z.enum(["produtiva", "improdutiva"]).optional(),
   salaryMin: z.string().optional(),
-  salaryMax: z.string().optional(),
   status: z.enum(["draft", "active", "paused", "closed", "expired", "aberto", "aprovada", "em_recrutamento", "em_documentacao"]).default("draft"),
   createdBy: z.string().optional(),
   expiresAt: z.string().optional(),
@@ -670,6 +668,9 @@ export type InsertRolePermission = z.infer<typeof insertRolePermissionSchema>;
 
 export type Profession = typeof professions.$inferSelect;
 export type InsertProfession = z.infer<typeof insertProfessionSchema>;
+
+export type WorkScale = typeof workScales.$inferSelect;
+export type InsertWorkScale = z.infer<typeof insertWorkScaleSchema>;
 
 // Extended types for joined queries
 export type JobWithDetails = Job & {

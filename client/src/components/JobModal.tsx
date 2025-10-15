@@ -3,7 +3,7 @@ import React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertJobSchema, type InsertJob, type JobWithDetails, type CompaniesListResponse, type Profession, type Client } from "@shared/schema";
+import { insertJobSchema, type InsertJob, type JobWithDetails, type CompaniesListResponse, type Profession, type Client, type WorkScale } from "@shared/schema";
 import { getAllCities } from "@shared/constants";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
@@ -119,7 +119,7 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
     queryKey: ["/api/recruiters"],
   });
 
-  const { data: workScales } = useQuery({
+  const { data: workScales } = useQuery<WorkScale[]>({
     queryKey: ["/api/work-scales"],
   });
 
@@ -164,7 +164,6 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
         jobType: jobData.jobType || undefined,
         status: jobData.status || "draft",
         salaryMin: jobData.salaryMin || "",
-        salaryMax: jobData.salaryMax || "",
         openingDate: jobData.openingDate ? new Date(jobData.openingDate).toISOString().split('T')[0] : undefined,
         startDate: jobData.startDate ? new Date(jobData.startDate).toISOString().split('T')[0] : undefined,
         openingReason: jobData.openingReason || undefined,
@@ -846,26 +845,6 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
                           {...field}
                           value={field.value || ""}
                           data-testid="input-salary-min"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="salaryMax"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Salário Máximo (R$)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="8000"
-                          {...field}
-                          value={field.value || ""}
-                          data-testid="input-salary-max"
                         />
                       </FormControl>
                       <FormMessage />

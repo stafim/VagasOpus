@@ -183,6 +183,16 @@ export const professions = pgTable("professions", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Work Scales table - Parametrized work scales
+export const workScales = pgTable("work_scales", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name", { length: 100 }).notNull().unique(), // e.g., "5x1", "5x2", "6x1", "12x36"
+  description: text("description"), // Optional description
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Jobs table - temporarily keeping both title and professionId for migration
 export const jobs = pgTable("jobs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -209,7 +219,7 @@ export const jobs = pgTable("jobs", {
   clientId: varchar("client_id").references(() => clients.id), // Cliente
   vacancyQuantity: integer("vacancy_quantity").default(1), // Quantidade de vagas
   gender: genderEnum("gender").default("indiferente"), // Sexo
-  workScale: workScaleEnum("work_scale"), // Escala de trabalho
+  workScaleId: varchar("work_scale_id").references(() => workScales.id), // Escala de trabalho (parametrizada)
   workHours: varchar("work_hours", { length: 100 }), // Horário de trabalho
   
   // Remuneração e benefícios
@@ -519,6 +529,12 @@ export const insertClientSchema = createInsertSchema(clients).omit({
   updatedAt: true,
 });
 
+export const insertWorkScaleSchema = createInsertSchema(workScales).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertJobSchema = z.object({
   professionId: z.string().min(1, "Profissão é obrigatória"),
   companyId: z.string().min(1, "Empresa é obrigatória"),
@@ -547,7 +563,7 @@ export const insertJobSchema = z.object({
   clientId: z.string().optional(),
   vacancyQuantity: z.number().optional(),
   gender: z.enum(["masculino", "feminino", "indiferente"]).optional(),
-  workScale: z.enum(["5x1", "5x2", "6x1", "12x36", "outro"]).optional(),
+  workScaleId: z.string().optional(),
   workHours: z.string().optional(),
   
   // Remuneração e benefícios

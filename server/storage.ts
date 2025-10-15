@@ -13,6 +13,7 @@ import {
   userCompanyRoles,
   rolePermissions,
   professions,
+  workScales,
   type User,
   type UpsertUser,
   type InsertUser,
@@ -91,6 +92,13 @@ export interface IStorage {
   createProfession(profession: InsertProfession): Promise<Profession>;
   updateProfession(id: string, profession: Partial<InsertProfession>): Promise<Profession>;
   deleteProfession(id: string): Promise<void>;
+
+  // Work Scale operations
+  getWorkScales(): Promise<any[]>;
+  getWorkScale(id: string): Promise<any | undefined>;
+  createWorkScale(workScale: any): Promise<any>;
+  updateWorkScale(id: string, workScale: Partial<any>): Promise<any>;
+  deleteWorkScale(id: string): Promise<void>;
 
   // Candidate operations
   getCandidates(): Promise<Candidate[]>;
@@ -394,6 +402,36 @@ export class DatabaseStorage implements IStorage {
 
   async deleteProfession(id: string): Promise<void> {
     await db.delete(professions).where(eq(professions.id, id));
+  }
+
+  // Work Scale operations
+  async getWorkScales(): Promise<any[]> {
+    return await db.select().from(workScales).where(eq(workScales.isActive, true)).orderBy(workScales.name);
+  }
+
+  async getWorkScale(id: string): Promise<any | undefined> {
+    const [workScale] = await db.select().from(workScales).where(eq(workScales.id, id));
+    return workScale;
+  }
+
+  async createWorkScale(workScale: any): Promise<any> {
+    const [newWorkScale] = await db.insert(workScales).values(workScale).returning();
+    return newWorkScale;
+  }
+
+  async updateWorkScale(id: string, workScale: Partial<any>): Promise<any> {
+    const [updatedWorkScale] = await db
+      .update(workScales)
+      .set({ ...workScale, updatedAt: new Date() })
+      .where(eq(workScales.id, id))
+      .returning();
+    return updatedWorkScale;
+  }
+
+  async deleteWorkScale(id: string): Promise<void> {
+    await db.update(workScales)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(workScales.id, id));
   }
 
   // Candidate operations

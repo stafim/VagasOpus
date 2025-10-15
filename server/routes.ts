@@ -177,6 +177,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Work Scale routes
+  app.get('/api/work-scales', isAuthenticated, async (req, res) => {
+    try {
+      const workScales = await storage.getWorkScales();
+      res.json(workScales);
+    } catch (error) {
+      console.error("Error fetching work scales:", error);
+      res.status(500).json({ message: "Failed to fetch work scales" });
+    }
+  });
+
+  app.get('/api/work-scales/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const workScale = await storage.getWorkScale(id);
+      if (!workScale) {
+        return res.status(404).json({ message: "Work scale not found" });
+      }
+      res.json(workScale);
+    } catch (error) {
+      console.error("Error fetching work scale:", error);
+      res.status(500).json({ message: "Failed to fetch work scale" });
+    }
+  });
+
+  app.post('/api/work-scales', isAuthenticated, async (req, res) => {
+    try {
+      const workScale = await storage.createWorkScale(req.body);
+      res.status(201).json(workScale);
+    } catch (error) {
+      console.error("Error creating work scale:", error);
+      res.status(500).json({ message: "Failed to create work scale" });
+    }
+  });
+
+  app.put('/api/work-scales/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const workScale = await storage.updateWorkScale(id, req.body);
+      res.json(workScale);
+    } catch (error) {
+      console.error("Error updating work scale:", error);
+      res.status(500).json({ message: "Failed to update work scale" });
+    }
+  });
+
+  app.delete('/api/work-scales/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteWorkScale(id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting work scale:", error);
+      res.status(500).json({ message: "Failed to delete work scale" });
+    }
+  });
+
   // Company routes
   app.get('/api/companies', isAuthenticated, async (req, res) => {
     try {

@@ -62,12 +62,6 @@ const navigationItems = [
     description: "Controle de acesso"
   },
   {
-    name: "Relatórios",
-    href: "/reports",
-    icon: FileText,
-    description: "Relatórios detalhados"
-  },
-  {
     name: "Fechamento de Vagas",
     href: "/reports/job-closure",
     icon: ClipboardCheck,

@@ -43,6 +43,7 @@ Preferred communication style: Simple, everyday language.
 - **Type Safety**: Full TypeScript integration with Drizzle schema types
 - **Validation**: Zod schemas for API input validation and type inference
 - **Relationships**: Well-defined foreign key relationships between entities
+- **Parametrized Systems**: Work scales and benefits are now fully parametrized and managed via Settings page
 
 ## UI/UX Architecture
 - **Design System**: Consistent component library with shadcn/ui

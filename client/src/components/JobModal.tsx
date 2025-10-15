@@ -86,6 +86,7 @@ const jobFormSchema = z.object({
   hasFoodVoucher: z.boolean().default(false),
   hasTransportVoucher: z.boolean().default(false),
   hasHealthInsurance: z.boolean().default(false),
+  hasChartered: z.boolean().default(false),
 });
 
 type JobFormData = z.infer<typeof jobFormSchema>;
@@ -146,6 +147,7 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
       hasFoodVoucher: false,
       hasTransportVoucher: false,
       hasHealthInsurance: false,
+      hasChartered: false,
     },
   });
 
@@ -183,6 +185,7 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
         hasFoodVoucher: jobData.hasFoodVoucher || false,
         hasTransportVoucher: jobData.hasTransportVoucher || false,
         hasHealthInsurance: jobData.hasHealthInsurance || false,
+        hasChartered: jobData.hasChartered || false,
       });
     }
   }, [isEditing, jobData, form]);
@@ -993,6 +996,25 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
                           </FormControl>
                           <div className="space-y-1 leading-none">
                             <FormLabel>Plano de Saúde</FormLabel>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="hasChartered"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              data-testid="checkbox-chartered"
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>Fretado</FormLabel>
                           </div>
                         </FormItem>
                       )}

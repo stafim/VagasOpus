@@ -233,6 +233,7 @@ export const jobs = pgTable("jobs", {
   hasFoodVoucher: boolean("has_food_voucher").default(false), // Vale refeição
   hasTransportVoucher: boolean("has_transport_voucher").default(false), // Vale transporte
   hasHealthInsurance: boolean("has_health_insurance").default(false), // Plano de saúde
+  hasChartered: boolean("has_chartered").default(false), // Fretado
   
   status: jobStatusEnum("status").default("draft"),
   createdBy: varchar("created_by").references(() => users.id),
@@ -574,6 +575,7 @@ export const insertJobSchema = z.object({
   hasFoodVoucher: z.boolean().optional(),
   hasTransportVoucher: z.boolean().optional(),
   hasHealthInsurance: z.boolean().optional(),
+  hasChartered: z.boolean().optional(),
 });
 
 export const insertCandidateSchema = createInsertSchema(candidates).omit({

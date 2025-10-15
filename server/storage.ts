@@ -94,7 +94,7 @@ export interface IStorage {
   deleteProfession(id: string): Promise<void>;
 
   // Work Scale operations
-  getWorkScales(): Promise<any[]>;
+  getWorkScales(includeInactive?: boolean): Promise<any[]>;
   getWorkScale(id: string): Promise<any | undefined>;
   createWorkScale(workScale: any): Promise<any>;
   updateWorkScale(id: string, workScale: Partial<any>): Promise<any>;
@@ -405,7 +405,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Work Scale operations
-  async getWorkScales(): Promise<any[]> {
+  async getWorkScales(includeInactive = false): Promise<any[]> {
+    if (includeInactive) {
+      return await db.select().from(workScales).orderBy(workScales.name);
+    }
     return await db.select().from(workScales).where(eq(workScales.isActive, true)).orderBy(workScales.name);
   }
 

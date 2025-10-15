@@ -180,7 +180,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Work Scale routes
   app.get('/api/work-scales', isAuthenticated, async (req, res) => {
     try {
-      const workScales = await storage.getWorkScales();
+      const includeInactive = req.query.includeInactive === 'true';
+      const workScales = await storage.getWorkScales(includeInactive);
       res.json(workScales);
     } catch (error) {
       console.error("Error fetching work scales:", error);

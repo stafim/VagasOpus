@@ -193,6 +193,16 @@ export const workScales = pgTable("work_scales", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Benefits table - Parametrized benefits
+export const benefits = pgTable("benefits", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name", { length: 100 }).notNull().unique(), // e.g., "Vale Alimentação", "Plano de Saúde"
+  description: text("description"), // Optional description
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Jobs table - temporarily keeping both title and professionId for migration
 export const jobs = pgTable("jobs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -228,19 +238,20 @@ export const jobs = pgTable("jobs", {
   hasHazardPay: boolean("has_hazard_pay").default(false), // Periculosidade
   unhealthinessLevel: unhealthinessEnum("unhealthiness_level").default("nao"), // Insalubridade
   
-  // Benefícios
-  hasMealVoucher: boolean("has_meal_voucher").default(false), // Vale alimentação
-  hasFoodVoucher: boolean("has_food_voucher").default(false), // Vale refeição
-  hasTransportVoucher: boolean("has_transport_voucher").default(false), // Vale transporte
-  hasHealthInsurance: boolean("has_health_insurance").default(false), // Plano de saúde
-  hasChartered: boolean("has_chartered").default(false), // Fretado
-  
   status: jobStatusEnum("status").default("draft"),
   createdBy: varchar("created_by").references(() => users.id),
   expiresAt: timestamp("expires_at"),
   slaDeadline: timestamp("sla_deadline"), // SLA de 14 dias para fechamento da vaga
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Job-Benefits relationship table (many-to-many)
+export const jobBenefits = pgTable("job_benefits", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  jobId: varchar("job_id").references(() => jobs.id, { onDelete: "cascade" }).notNull(),
+  benefitId: varchar("benefit_id").references(() => benefits.id, { onDelete: "cascade" }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // User-Company-Role assignments table
@@ -535,6 +546,17 @@ export const insertWorkScaleSchema = createInsertSchema(workScales).omit({
   updatedAt: true,
 });
 
+export const insertBenefitSchema = createInsertSchema(benefits).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertJobBenefitSchema = createInsertSchema(jobBenefits).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertJobSchema = z.object({
   professionId: z.string().min(1, "Profissão é obrigatória"),
   companyId: z.string().min(1, "Empresa é obrigatória"),
@@ -570,12 +592,8 @@ export const insertJobSchema = z.object({
   hasHazardPay: z.boolean().optional(),
   unhealthinessLevel: z.enum(["nao", "10", "20", "40"]).optional(),
   
-  // Benefícios
-  hasMealVoucher: z.boolean().optional(),
-  hasFoodVoucher: z.boolean().optional(),
-  hasTransportVoucher: z.boolean().optional(),
-  hasHealthInsurance: z.boolean().optional(),
-  hasChartered: z.boolean().optional(),
+  // Benefícios (array of benefit IDs)
+  benefitIds: z.array(z.string()).optional(),
 });
 
 export const insertCandidateSchema = createInsertSchema(candidates).omit({
@@ -673,6 +691,12 @@ export type InsertProfession = z.infer<typeof insertProfessionSchema>;
 
 export type WorkScale = typeof workScales.$inferSelect;
 export type InsertWorkScale = z.infer<typeof insertWorkScaleSchema>;
+
+export type Benefit = typeof benefits.$inferSelect;
+export type InsertBenefit = z.infer<typeof insertBenefitSchema>;
+
+export type JobBenefit = typeof jobBenefits.$inferSelect;
+export type InsertJobBenefit = z.infer<typeof insertJobBenefitSchema>;
 
 // Extended types for joined queries
 export type JobWithDetails = Job & {

@@ -212,8 +212,8 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
         ageRangeMin: data.ageRangeMin ? parseInt(data.ageRangeMin) : undefined,
         ageRangeMax: data.ageRangeMax ? parseInt(data.ageRangeMax) : undefined,
         vacancyQuantity: data.vacancyQuantity ? parseInt(data.vacancyQuantity) : 1,
-        openingDate: data.openingDate ? new Date(data.openingDate).toISOString() : undefined,
-        startDate: data.startDate ? new Date(data.startDate).toISOString() : undefined,
+        openingDate: data.openingDate || undefined,
+        startDate: data.startDate || undefined,
       };
       const response = await apiRequest("POST", "/api/jobs", apiData);
       return response.json();
@@ -246,8 +246,8 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
         ageRangeMin: data.ageRangeMin ? parseInt(data.ageRangeMin) : undefined,
         ageRangeMax: data.ageRangeMax ? parseInt(data.ageRangeMax) : undefined,
         vacancyQuantity: data.vacancyQuantity ? parseInt(data.vacancyQuantity) : 1,
-        openingDate: data.openingDate ? new Date(data.openingDate).toISOString() : undefined,
-        startDate: data.startDate ? new Date(data.startDate).toISOString() : undefined,
+        openingDate: data.openingDate || undefined,
+        startDate: data.startDate || undefined,
       };
       const response = await apiRequest("PUT", `/api/jobs/${jobId}`, apiData);
       return response.json();

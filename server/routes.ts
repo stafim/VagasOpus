@@ -529,17 +529,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const slaDeadline = new Date();
       slaDeadline.setDate(slaDeadline.getDate() + 14);
       
-      // Convert date strings to Date objects
-      const bodyData = {
-        ...req.body,
-        openingDate: req.body.openingDate ? new Date(req.body.openingDate) : undefined,
-        startDate: req.body.startDate ? new Date(req.body.startDate) : undefined,
-      };
-      
       const validatedData = insertJobSchema.parse({
-        ...bodyData,
+        ...req.body,
         createdBy: userId,
-        slaDeadline,
+        slaDeadline: slaDeadline.toISOString(),
       });
       
       // Validate profession exists and is active  

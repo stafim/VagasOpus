@@ -1504,6 +1504,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async checkUserPermission(userId: string, companyId: string, permission: string): Promise<boolean> {
+    // If AUTH_BYPASS is enabled, allow all permissions
+    if (process.env.AUTH_BYPASS === 'true') {
+      return true;
+    }
+    
     const userPermissions = await this.getUserPermissions(userId, companyId);
     return userPermissions.includes(permission);
   }

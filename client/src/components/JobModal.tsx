@@ -181,11 +181,11 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
         bonus: jobData.bonus || "",
         hasHazardPay: jobData.hasHazardPay || false,
         unhealthinessLevel: jobData.unhealthinessLevel || "nao",
-        hasMealVoucher: jobData.hasMealVoucher || false,
-        hasFoodVoucher: jobData.hasFoodVoucher || false,
-        hasTransportVoucher: jobData.hasTransportVoucher || false,
-        hasHealthInsurance: jobData.hasHealthInsurance || false,
-        hasChartered: jobData.hasChartered || false,
+        hasMealVoucher: false,
+        hasFoodVoucher: false,
+        hasTransportVoucher: false,
+        hasHealthInsurance: false,
+        hasChartered: false,
       });
     }
   }, [isEditing, jobData, form]);
@@ -207,14 +207,13 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
       // Convert form data to API format
       const apiData = {
         ...data,
-        salaryMin: data.salaryMin ? data.salaryMin : null,
-        salaryMax: data.salaryMax ? data.salaryMax : null,
-        bonus: data.bonus ? data.bonus : null,
-        ageRangeMin: data.ageRangeMin ? parseInt(data.ageRangeMin) : null,
-        ageRangeMax: data.ageRangeMax ? parseInt(data.ageRangeMax) : null,
+        salaryMin: data.salaryMin || undefined,
+        bonus: data.bonus || undefined,
+        ageRangeMin: data.ageRangeMin ? parseInt(data.ageRangeMin) : undefined,
+        ageRangeMax: data.ageRangeMax ? parseInt(data.ageRangeMax) : undefined,
         vacancyQuantity: data.vacancyQuantity ? parseInt(data.vacancyQuantity) : 1,
-        openingDate: data.openingDate || null,
-        startDate: data.startDate || null,
+        openingDate: data.openingDate || undefined,
+        startDate: data.startDate || undefined,
       };
       const response = await apiRequest("POST", "/api/jobs", apiData);
       return response.json();
@@ -242,14 +241,13 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
       // Convert form data to API format
       const apiData = {
         ...data,
-        salaryMin: data.salaryMin ? data.salaryMin : null,
-        salaryMax: data.salaryMax ? data.salaryMax : null,
-        bonus: data.bonus ? data.bonus : null,
-        ageRangeMin: data.ageRangeMin ? parseInt(data.ageRangeMin) : null,
-        ageRangeMax: data.ageRangeMax ? parseInt(data.ageRangeMax) : null,
+        salaryMin: data.salaryMin || undefined,
+        bonus: data.bonus || undefined,
+        ageRangeMin: data.ageRangeMin ? parseInt(data.ageRangeMin) : undefined,
+        ageRangeMax: data.ageRangeMax ? parseInt(data.ageRangeMax) : undefined,
         vacancyQuantity: data.vacancyQuantity ? parseInt(data.vacancyQuantity) : 1,
-        openingDate: data.openingDate || null,
-        startDate: data.startDate || null,
+        openingDate: data.openingDate || undefined,
+        startDate: data.startDate || undefined,
       };
       const response = await apiRequest("PUT", `/api/jobs/${jobId}`, apiData);
       return response.json();

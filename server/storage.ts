@@ -528,7 +528,7 @@ export class DatabaseStorage implements IStorage {
         location: jobs.location,
         contractType: jobs.contractType,
         salaryMin: jobs.salaryMin,
-        salaryMax: jobs.salaryMax,
+
         status: jobs.status,
         createdBy: jobs.createdBy,
         expiresAt: jobs.expiresAt,
@@ -630,7 +630,7 @@ export class DatabaseStorage implements IStorage {
         location: jobs.location,
         contractType: jobs.contractType,
         salaryMin: jobs.salaryMin,
-        salaryMax: jobs.salaryMax,
+
         status: jobs.status,
         createdBy: jobs.createdBy,
         expiresAt: jobs.expiresAt,

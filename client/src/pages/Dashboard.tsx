@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -70,13 +71,46 @@ const statusLabels: Record<string, string> = {
 export default function Dashboard() {
   const [showJobModal, setShowJobModal] = useState(false);
   const [search, setSearch] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState<string>("all");
+  
+  // Gerar lista dos últimos 12 meses
+  const getMonthOptions = () => {
+    const months = [{ value: "all", label: "Todos os períodos" }];
+    const now = new Date();
+    
+    for (let i = 0; i < 12; i++) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const value = date.toISOString().slice(0, 7); // YYYY-MM
+      const label = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+      months.push({ 
+        value, 
+        label: label.charAt(0).toUpperCase() + label.slice(1) 
+      });
+    }
+    
+    return months;
+  };
 
   const { data: metrics, isLoading: metricsLoading } = useQuery<DashboardMetrics>({
-    queryKey: ["/api/dashboard/metrics"],
+    queryKey: ["/api/dashboard/metrics", selectedMonth],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (selectedMonth !== "all") params.append("month", selectedMonth);
+      const res = await fetch(`/api/dashboard/metrics?${params}`, { credentials: "include" });
+      if (!res.ok) throw new Error('Failed to fetch metrics');
+      return await res.json();
+    }
   });
 
   const { data: jobsByStatus, isLoading: jobsByStatusLoading } = useQuery<JobsByStatusResponse>({
-    queryKey: ["/api/dashboard/jobs-by-status"],
+    queryKey: ["/api/dashboard/jobs-by-status", selectedMonth],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (selectedMonth !== "all") params.append("month", selectedMonth);
+      const res = await fetch(`/api/dashboard/jobs-by-status?${params}`, { credentials: "include" });
+      if (!res.ok) throw new Error('Failed to fetch jobs by status');
+      return await res.json();
+    }
   });
 
   const { data: applicationsByMonth, isLoading: applicationsByMonthLoading } = useQuery<ApplicationsByMonthResponse>({
@@ -88,15 +122,36 @@ export default function Dashboard() {
   });
 
   const { data: jobsByCreator, isLoading: jobsByCreatorLoading } = useQuery<JobsByCreatorResponse>({
-    queryKey: ["/api/dashboard/jobs-by-creator"],
+    queryKey: ["/api/dashboard/jobs-by-creator", selectedMonth],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (selectedMonth !== "all") params.append("month", selectedMonth);
+      const res = await fetch(`/api/dashboard/jobs-by-creator?${params}`, { credentials: "include" });
+      if (!res.ok) throw new Error('Failed to fetch jobs by creator');
+      return await res.json();
+    }
   });
 
   const { data: jobsByCompany, isLoading: jobsByCompanyLoading } = useQuery<JobsByCompanyResponse>({
-    queryKey: ["/api/dashboard/jobs-by-company"],
+    queryKey: ["/api/dashboard/jobs-by-company", selectedMonth],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (selectedMonth !== "all") params.append("month", selectedMonth);
+      const res = await fetch(`/api/dashboard/jobs-by-company?${params}`, { credentials: "include" });
+      if (!res.ok) throw new Error('Failed to fetch jobs by company');
+      return await res.json();
+    }
   });
 
   const { data: jobsSLA, isLoading: jobsSLALoading } = useQuery<JobsSLAResponse>({
-    queryKey: ["/api/dashboard/jobs-sla"],
+    queryKey: ["/api/dashboard/jobs-sla", selectedMonth],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (selectedMonth !== "all") params.append("month", selectedMonth);
+      const res = await fetch(`/api/dashboard/jobs-sla?${params}`, { credentials: "include" });
+      if (!res.ok) throw new Error('Failed to fetch jobs SLA');
+      return await res.json();
+    }
   });
 
   const { data: jobs, isLoading: jobsLoading } = useQuery<JobsListResponse>({
@@ -144,6 +199,33 @@ export default function Dashboard() {
       />
 
       <div className="space-y-8">
+        {/* Filtros */}
+        <Card className="shadow-sm">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Calendar className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <h3 className="text-sm font-medium text-foreground">Período de Análise</h3>
+                  <p className="text-xs text-muted-foreground">Filtrar dados por mês</p>
+                </div>
+              </div>
+              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                <SelectTrigger className="w-[240px]" data-testid="select-month-filter">
+                  <SelectValue placeholder="Selecione o período" />
+                </SelectTrigger>
+                <SelectContent>
+                  {getMonthOptions().map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Metrics Cards */}
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           {metricsLoading ? (

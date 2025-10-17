@@ -542,9 +542,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const limit = parseInt(req.query.limit as string) || 50;
       const offset = parseInt(req.query.offset as string) || 0;
       const search = req.query.search as string;
-      const status = req.query.status as string;
-      const companyId = req.query.companyId as string;
-      const professionId = req.query.professionId as string;
+      const status = req.query.status as string === 'all' ? undefined : req.query.status as string;
+      const companyId = req.query.companyId as string === 'all' ? undefined : req.query.companyId as string;
+      const professionId = req.query.professionId as string === 'all' ? undefined : req.query.professionId as string;
       
       let jobs = await storage.getJobs(limit, offset, search, status, companyId, professionId);
       

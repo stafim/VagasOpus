@@ -89,9 +89,9 @@ export default function Jobs() {
   const [deletingJobId, setDeletingJobId] = useState<string | undefined>();
   const [search, setSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [statusFilter, setStatusFilter] = useState("");
-  const [companyFilter, setCompanyFilter] = useState("");
-  const [professionFilter, setProfessionFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [companyFilter, setCompanyFilter] = useState("all");
+  const [professionFilter, setProfessionFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(0);
   const pageSize = 20;
 
@@ -119,13 +119,13 @@ export default function Jobs() {
       if (search.trim()) {
         queryParams.set('search', search.trim());
       }
-      if (statusFilter) {
+      if (statusFilter && statusFilter !== 'all') {
         queryParams.set('status', statusFilter);
       }
-      if (companyFilter) {
+      if (companyFilter && companyFilter !== 'all') {
         queryParams.set('companyId', companyFilter);
       }
-      if (professionFilter) {
+      if (professionFilter && professionFilter !== 'all') {
         queryParams.set('professionId', professionFilter);
       }
       const queryString = queryParams.toString();
@@ -278,7 +278,7 @@ export default function Jobs() {
                     <SelectValue placeholder="Todos os status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos os status</SelectItem>
+                    <SelectItem value="all">Todos os status</SelectItem>
                     {Object.keys(JOB_STATUS_CONFIG).map((status) => (
                       <SelectItem key={status} value={status}>
                         {getStatusLabel(status)}
@@ -294,7 +294,7 @@ export default function Jobs() {
                     <SelectValue placeholder="Todas as empresas" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas as empresas</SelectItem>
+                    <SelectItem value="all">Todas as empresas</SelectItem>
                     {companies?.map((company: any) => (
                       <SelectItem key={company.id} value={company.id}>
                         {company.name}
@@ -310,7 +310,7 @@ export default function Jobs() {
                     <SelectValue placeholder="Todas as profissões" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas as profissões</SelectItem>
+                    <SelectItem value="all">Todas as profissões</SelectItem>
                     {professions?.map((profession: any) => (
                       <SelectItem key={profession.id} value={profession.id}>
                         {profession.name}
@@ -325,9 +325,9 @@ export default function Jobs() {
                 variant="outline" 
                 size="sm" 
                 onClick={() => {
-                  setStatusFilter("");
-                  setCompanyFilter("");
-                  setProfessionFilter("");
+                  setStatusFilter("all");
+                  setCompanyFilter("all");
+                  setProfessionFilter("all");
                 }}
                 data-testid="button-clear-filters"
               >

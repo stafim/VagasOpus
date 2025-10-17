@@ -6,6 +6,7 @@ import { queryClient } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { Bell, Plus, Menu, LogOut, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useLocation } from "wouter";
 
 interface TopBarProps {
   title?: string;
@@ -22,6 +23,7 @@ export default function TopBar({
 }: TopBarProps) {
   const { toast } = useToast();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [, setLocation] = useLocation();
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -35,6 +37,9 @@ export default function TopBar({
 
       // Invalidate auth query to update UI
       await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      
+      // Redirect to login page
+      setLocation("/login-demo");
     } catch (error: any) {
       toast({
         title: "Erro no logout",

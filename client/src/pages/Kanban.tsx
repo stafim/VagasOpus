@@ -33,7 +33,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Users, Mail, Phone, Briefcase, Clock, Plus, Filter } from "lucide-react";
+import { Users, Mail, Phone, Briefcase, Clock, Plus, Filter, FileText } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 const KANBAN_STAGES = [
   { id: "entrevista_inicial", label: "Entrevista Inicial", color: "bg-blue-500" },
@@ -56,6 +57,7 @@ interface Application {
   candidateId: string;
   kanbanStage: string;
   appliedAt: string;
+  notes?: string;
   candidate?: Candidate;
   job?: {
     profession?: {
@@ -83,6 +85,9 @@ export default function Kanban() {
   const [showCandidateModal, setShowCandidateModal] = useState(false);
   const [location] = useLocation();
   const [selectedJobFilter, setSelectedJobFilter] = useState<string>("");
+  const [showNotesModal, setShowNotesModal] = useState(false);
+  const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
+  const [notes, setNotes] = useState("");
 
   // Parse jobId from URL query string
   const urlParams = new URLSearchParams(location.split('?')[1] || '');
@@ -191,6 +196,27 @@ export default function Kanban() {
     },
   });
 
+  const updateNotesMutation = useMutation({
+    mutationFn: async ({ id, notes }: { id: string; notes: string }) => {
+      await apiRequest("PATCH", `/api/applications/${id}`, { notes });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/applications"] });
+      toast({
+        title: "Sucesso",
+        description: "Notas salvas com sucesso!",
+      });
+      setShowNotesModal(false);
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Erro ao salvar notas. Tente novamente.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleDragStart = (application: Application) => {
     setDraggedItem(application);
   };
@@ -240,6 +266,18 @@ export default function Kanban() {
   const handleCloseModal = () => {
     setShowCandidateModal(false);
     form.reset();
+  };
+
+  const handleOpenNotes = (application: Application) => {
+    setSelectedApplication(application);
+    setNotes(application.notes || "");
+    setShowNotesModal(true);
+  };
+
+  const handleSaveNotes = () => {
+    if (selectedApplication) {
+      updateNotesMutation.mutate({ id: selectedApplication.id, notes });
+    }
   };
 
   return (
@@ -378,10 +416,21 @@ export default function Kanban() {
                                 </div>
                               )}
 
-                              {/* Date */}
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground pt-2 border-t">
-                                <Clock className="h-3 w-3" />
-                                <span>Aplicado em {formatDate(application.appliedAt)}</span>
+                              {/* Date and Notes */}
+                              <div className="flex items-center justify-between pt-2 border-t">
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <Clock className="h-3 w-3" />
+                                  <span>Aplicado em {formatDate(application.appliedAt)}</span>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleOpenNotes(application)}
+                                  className="h-7 px-2"
+                                  title={application.notes ? "Ver/Editar notas" : "Adicionar notas"}
+                                >
+                                  <FileText className={`h-4 w-4 ${application.notes ? 'text-primary' : 'text-muted-foreground'}`} />
+                                </Button>
                               </div>
                             </div>
                           </CardContent>
@@ -498,6 +547,51 @@ export default function Kanban() {
               </div>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Notes Modal */}
+      <Dialog open={showNotesModal} onOpenChange={setShowNotesModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              Notas do Candidato - {selectedApplication?.candidate?.name}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Notas Internas</label>
+              <Textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Adicione notas sobre o candidato, observações da entrevista, feedback, etc..."
+                className="min-h-[200px]"
+                data-testid="textarea-notes"
+              />
+            </div>
+
+            <div className="flex items-center justify-end space-x-4 pt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setShowNotesModal(false)}
+                data-testid="button-cancel-notes"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleSaveNotes}
+                disabled={updateNotesMutation.isPending}
+                data-testid="button-save-notes"
+              >
+                {updateNotesMutation.isPending && (
+                  <i className="fas fa-spinner fa-spin mr-2"></i>
+                )}
+                Salvar Notas
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </>

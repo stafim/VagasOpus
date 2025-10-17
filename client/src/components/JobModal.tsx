@@ -15,6 +15,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Form,
   FormControl,
   FormField,
@@ -47,7 +57,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const jobFormSchema = z.object({
@@ -102,6 +112,7 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
   const isEditing = !!jobId;
   const [cities] = useState(getAllCities());
   const [professionPopoverOpen, setProfessionPopoverOpen] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const { data: companies } = useQuery<CompaniesListResponse>({
     queryKey: ["/api/companies"],
@@ -313,6 +324,29 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
     },
   });
 
+  const deleteJobMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("DELETE", `/api/jobs/${jobId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+      toast({
+        title: "Sucesso",
+        description: "Vaga excluída com sucesso!",
+      });
+      setShowDeleteDialog(false);
+      onClose();
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir vaga. Tente novamente.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: JobFormData) => {
     if (isEditing) {
       updateJobMutation.mutate(data);
@@ -321,12 +355,17 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
     }
   };
 
+  const handleDelete = () => {
+    deleteJobMutation.mutate();
+  };
+
   const handleClose = () => {
     form.reset();
     onClose();
   };
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -1081,24 +1120,61 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
               </div>
             )}
 
-            <div className="flex items-center justify-end space-x-4 pt-4">
-              <Button type="button" variant="outline" onClick={handleClose} data-testid="button-cancel">
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                disabled={createJobMutation.isPending || updateJobMutation.isPending}
-                data-testid="button-save"
-              >
-                {(createJobMutation.isPending || updateJobMutation.isPending) && (
-                  <i className="fas fa-spinner fa-spin mr-2"></i>
-                )}
-                {isEditing ? "Atualizar Vaga" : "Criar Vaga"}
-              </Button>
+            <div className="flex items-center justify-between pt-4">
+              {isEditing && (
+                <Button 
+                  type="button" 
+                  variant="destructive" 
+                  onClick={() => setShowDeleteDialog(true)}
+                  data-testid="button-delete-job"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Excluir Vaga
+                </Button>
+              )}
+              <div className={`flex items-center space-x-4 ${!isEditing ? 'ml-auto' : ''}`}>
+                <Button type="button" variant="outline" onClick={handleClose} data-testid="button-cancel">
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createJobMutation.isPending || updateJobMutation.isPending}
+                  data-testid="button-save"
+                >
+                  {(createJobMutation.isPending || updateJobMutation.isPending) && (
+                    <i className="fas fa-spinner fa-spin mr-2"></i>
+                  )}
+                  {isEditing ? "Atualizar Vaga" : "Criar Vaga"}
+                </Button>
+              </div>
             </div>
           </form>
         </Form>
       </DialogContent>
     </Dialog>
+
+    {/* Delete Confirmation Dialog */}
+    <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+          <AlertDialogDescription>
+            Tem certeza que deseja excluir esta vaga? Esta ação não pode ser desfeita.
+            Todas as candidaturas relacionadas também serão removidas.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel data-testid="button-cancel-delete">Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDelete}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            data-testid="button-confirm-delete"
+          >
+            Excluir Vaga
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

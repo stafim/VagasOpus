@@ -6,6 +6,28 @@ This is a job management system (VagasPro) built with React and Express, designe
 
 # Recent Changes (October 17, 2025)
 
+## Job Manager Column - Gestor (Manager)
+- **Added**: "Gestor" column in jobs table showing who created each job
+- **Features**:
+  - Displays full name of job creator (firstName + lastName)
+  - Sortable column with click-to-sort functionality
+  - Fallback to email if name not available, shows "N/A" if no creator
+- **Backend**: Enhanced SQL queries with LEFT JOIN to fetch creator user data
+  - Added `creator` field to job responses with user information
+  - Updated both `getJobs()` and `getJob()` methods to include creator data
+- **Data Assignment**: All open jobs assigned Ricardo Gestor as both creator and recruiter
+
+## Job Modal - Delete Button Integration
+- **Moved**: Delete job button from table to job edit modal
+- **Location**: Bottom-left corner of modal (when editing)
+- **Features**:
+  - Red destructive button with trash icon
+  - Confirmation dialog before deletion
+  - Removes job and all related applications
+  - Only visible when editing existing jobs (not when creating new)
+  - Automatically closes modal and refreshes list after deletion
+- **UX**: Buttons layout - "Excluir Vaga" (left) | "Cancelar" + "Atualizar Vaga" (right)
+
 ## Dashboard - Numbered Job Status Display
 - **Added**: Numerical prefixes to job status labels in Dashboard
 - **Status Order**:

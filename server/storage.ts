@@ -579,12 +579,19 @@ export class DatabaseStorage implements IStorage {
           lastName: sql<string>`recruiter_users.last_name`,
           email: sql<string>`recruiter_users.email`,
         },
+        creator: {
+          id: sql<string>`creator_users.id`,
+          firstName: sql<string>`creator_users.first_name`,
+          lastName: sql<string>`creator_users.last_name`,
+          email: sql<string>`creator_users.email`,
+        },
         applicationsCount: count(applications.id),
       })
       .from(jobs)
       .leftJoin(professions, eq(jobs.professionId, professions.id))
       .leftJoin(companies, eq(jobs.companyId, companies.id))
       .leftJoin(sql`users as recruiter_users`, eq(jobs.recruiterId, sql`recruiter_users.id`))
+      .leftJoin(sql`users as creator_users`, eq(jobs.createdBy, sql`creator_users.id`))
       .leftJoin(applications, eq(jobs.id, applications.jobId))
       .groupBy(
         jobs.id, 
@@ -593,7 +600,11 @@ export class DatabaseStorage implements IStorage {
         sql`recruiter_users.id`,
         sql`recruiter_users.first_name`,
         sql`recruiter_users.last_name`,
-        sql`recruiter_users.email`
+        sql`recruiter_users.email`,
+        sql`creator_users.id`,
+        sql`creator_users.first_name`,
+        sql`creator_users.last_name`,
+        sql`creator_users.email`
       );
 
     const whereConditions = [];
@@ -635,6 +646,7 @@ export class DatabaseStorage implements IStorage {
       ...row,
       company: row.company?.id ? row.company : undefined,
       recruiter: row.recruiter?.id ? row.recruiter : undefined,
+      creator: row.creator?.id ? row.creator : undefined,
     }));
   }
 
@@ -684,6 +696,12 @@ export class DatabaseStorage implements IStorage {
           lastName: sql<string>`recruiter_users.last_name`,
           email: sql<string>`recruiter_users.email`,
         },
+        creator: {
+          id: sql<string>`creator_users.id`,
+          firstName: sql<string>`creator_users.first_name`,
+          lastName: sql<string>`creator_users.last_name`,
+          email: sql<string>`creator_users.email`,
+        },
         costCenter: {
           id: costCenters.id,
           name: costCenters.name,
@@ -698,6 +716,7 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(professions, eq(jobs.professionId, professions.id))
       .leftJoin(companies, eq(jobs.companyId, companies.id))
       .leftJoin(sql`users as recruiter_users`, eq(jobs.recruiterId, sql`recruiter_users.id`))
+      .leftJoin(sql`users as creator_users`, eq(jobs.createdBy, sql`creator_users.id`))
       .leftJoin(costCenters, eq(jobs.costCenterId, costCenters.id))
       .where(eq(jobs.id, id));
 
@@ -710,6 +729,7 @@ export class DatabaseStorage implements IStorage {
       profession: job.profession?.id ? job.profession : undefined,
       company: job.company?.id ? job.company : undefined,
       recruiter: job.recruiter?.id ? job.recruiter : undefined,
+      creator: job.creator?.id ? job.creator : undefined,
       costCenter: job.costCenter?.id ? job.costCenter : undefined,
       applications: jobApplications,
       applicationsCount: jobApplications.length,

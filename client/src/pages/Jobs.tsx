@@ -240,6 +240,10 @@ export default function Jobs() {
           aValue = a.recruiter?.email || '';
           bValue = b.recruiter?.email || '';
           break;
+        case 'creator':
+          aValue = a.creator?.email || a.creator?.firstName || '';
+          bValue = b.creator?.email || b.creator?.firstName || '';
+          break;
         default:
           return 0;
       }
@@ -527,6 +531,19 @@ export default function Jobs() {
                     </TableHead>
                     <TableHead 
                       className="cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort('creator')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Gestor
+                        {sortColumn === 'creator' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                        ) : (
+                          <ArrowUpDown className="h-4 w-4 opacity-50" />
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50 select-none"
                       onClick={() => handleSort('createdAt')}
                     >
                       <div className="flex items-center gap-1">
@@ -625,6 +642,17 @@ export default function Jobs() {
                           </div>
                         </TableCell>
                         <TableCell>
+                          <div className="text-sm text-foreground">
+                            {job.creator ? (
+                              job.creator.firstName && job.creator.lastName 
+                                ? `${job.creator.firstName} ${job.creator.lastName}`
+                                : job.creator.email
+                            ) : (
+                              <span className="text-muted-foreground">N/A</span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
                           <div className="text-sm text-muted-foreground">
                             {formatDate(job.createdAt)}
                           </div>
@@ -671,7 +699,7 @@ export default function Jobs() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={10} className="text-center py-12">
+                      <TableCell colSpan={11} className="text-center py-12">
                         <div className="text-muted-foreground">
                           <Briefcase className="h-16 w-16 mb-4" />
                           <p className="text-lg font-medium mb-2">Nenhuma vaga encontrada</p>

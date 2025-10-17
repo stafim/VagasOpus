@@ -4,6 +4,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,7 +22,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, User, Mail, Shield } from "lucide-react";
+import { Plus, User, Mail, Shield, Pencil, Trash2 } from "lucide-react";
 import { z } from "zod";
 
 const roleLabels: Record<string, string> = {
@@ -42,6 +52,8 @@ type UserFormData = z.infer<typeof userFormSchema>;
 
 export default function Users() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<any | null>(null);
+  const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const form = useForm<UserFormData>({
@@ -70,6 +82,7 @@ export default function Users() {
         description: "Usuário criado com sucesso!",
       });
       setIsModalOpen(false);
+      setEditingUser(null);
       form.reset();
     },
     onError: (error: any) => {
@@ -81,8 +94,84 @@ export default function Users() {
     },
   });
 
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: UserFormData }) => {
+      const response = await apiRequest("PUT", `/api/users/${id}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      toast({
+        title: "Sucesso",
+        description: "Usuário atualizado com sucesso!",
+      });
+      setIsModalOpen(false);
+      setEditingUser(null);
+      form.reset();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao atualizar usuário.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/users/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      toast({
+        title: "Sucesso",
+        description: "Usuário excluído com sucesso!",
+      });
+      setDeleteUserId(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao excluir usuário.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleEdit = (user: any) => {
+    setEditingUser(user);
+    form.reset({
+      name: user.firstName || user.lastName || "",
+      email: user.email,
+      password: "",
+      role: user.role
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = (id: string) => {
+    setDeleteUserId(id);
+  };
+
+  const confirmDelete = () => {
+    if (deleteUserId) {
+      deleteUserMutation.mutate(deleteUserId);
+    }
+  };
+
   const onSubmit = (data: UserFormData) => {
-    createUserMutation.mutate(data);
+    if (editingUser) {
+      updateUserMutation.mutate({ id: editingUser.id, data });
+    } else {
+      createUserMutation.mutate(data);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingUser(null);
+    form.reset();
   };
 
   if (isLoading) {
@@ -117,7 +206,7 @@ export default function Users() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Criar Novo Usuário</DialogTitle>
+              <DialogTitle>{editingUser ? "Editar Usuário" : "Criar Novo Usuário"}</DialogTitle>
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -209,16 +298,18 @@ export default function Users() {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setIsModalOpen(false)}
+                    onClick={handleCloseModal}
                   >
                     Cancelar
                   </Button>
                   <Button
                     type="submit"
-                    disabled={createUserMutation.isPending}
+                    disabled={createUserMutation.isPending || updateUserMutation.isPending}
                     data-testid="button-save-user"
                   >
-                    {createUserMutation.isPending ? "Criando..." : "Criar"}
+                    {createUserMutation.isPending || updateUserMutation.isPending 
+                      ? (editingUser ? "Atualizando..." : "Criando...") 
+                      : (editingUser ? "Atualizar" : "Criar")}
                   </Button>
                 </div>
               </form>
@@ -272,6 +363,24 @@ export default function Users() {
                     <div className="text-xs text-muted-foreground">
                       Desde: {new Date(user.createdAt).toLocaleDateString('pt-BR')}
                     </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEdit(user)}
+                        data-testid={`button-edit-${user.id}`}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(user.id)}
+                        data-testid={`button-delete-${user.id}`}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -279,6 +388,27 @@ export default function Users() {
           )}
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteUserId} onOpenChange={() => setDeleteUserId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

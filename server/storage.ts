@@ -64,7 +64,9 @@ export interface IStorage {
   // Authentication operations (for local auth)
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: { email: string; passwordHash: string; firstName?: string; lastName?: string; role?: string }): Promise<User>;
+  updateUser(id: string, user: { email?: string; firstName?: string; lastName?: string; role?: string }): Promise<User>;
   updateUserPassword(id: string, passwordHash: string): Promise<User>;
+  deleteUser(id: string): Promise<void>;
   getRecruiters(): Promise<User[]>;
   
   // Company operations
@@ -236,6 +238,15 @@ export class DatabaseStorage implements IStorage {
     return newUser;
   }
 
+  async updateUser(id: string, user: { email?: string; firstName?: string; lastName?: string; role?: string }): Promise<User> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({ ...user, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return updatedUser;
+  }
+
   async updateUserPassword(id: string, passwordHash: string): Promise<User> {
     const [updatedUser] = await db
       .update(users)
@@ -243,6 +254,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return updatedUser;
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await db.delete(users).where(eq(users.id, id));
   }
 
   // Get users that can be assigned as recruiters

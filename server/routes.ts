@@ -157,6 +157,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put('/api/users/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const userData = req.body;
+      
+      // Check if user exists
+      const existingUser = await storage.getUser(id);
+      if (!existingUser) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+      
+      // If email is being changed, check if new email is available
+      if (userData.email && userData.email !== existingUser.email) {
+        const emailInUse = await storage.getUserByEmail(userData.email);
+        if (emailInUse) {
+          return res.status(400).json({ message: "Email já está em uso" });
+        }
+      }
+      
+      // Update user (password is updated separately)
+      const updatedUser = await storage.updateUser(id, {
+        email: userData.email,
+        firstName: userData.name,
+        lastName: userData.name,
+        role: userData.role
+      });
+      
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ message: "Erro ao atualizar usuário" });
+    }
+  });
+
+  app.delete('/api/users/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Check if user exists
+      const existingUser = await storage.getUser(id);
+      if (!existingUser) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+      
+      await storage.deleteUser(id);
+      res.json({ message: "Usuário excluído com sucesso" });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Erro ao excluir usuário" });
+    }
+  });
+
   app.get('/api/professions/categories/:category', isAuthenticated, async (req, res) => {
     try {
       const { category } = req.params;

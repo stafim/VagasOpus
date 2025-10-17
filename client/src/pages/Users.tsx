@@ -339,9 +339,6 @@ export default function Users() {
                   data-testid={`user-item-${user.id}`}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-primary to-chart-2 rounded-full flex items-center justify-center shadow-sm">
-                      <User className="h-6 w-6 text-white" />
-                    </div>
                     <div>
                       <p className="font-medium text-foreground" data-testid={`text-username-${user.id}`}>
                         {user.firstName} {user.lastName}

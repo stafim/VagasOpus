@@ -26,7 +26,6 @@ import {
   Edit,
   Users,
   User,
-  Copy,
   Trash2,
   Briefcase,
   Plus,
@@ -465,9 +464,6 @@ export default function Jobs() {
                               data-testid={`button-kanban-${job.id}`}
                             >
                               <LayoutDashboard className="h-4 w-4 text-purple-600" />
-                            </Button>
-                            <Button variant="ghost" size="sm">
-                              <Copy className="h-4 w-4 text-blue-600" />
                             </Button>
                             <Button
                               variant="ghost"

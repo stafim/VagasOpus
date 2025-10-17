@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import TopBar from "@/components/TopBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,18 +12,44 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, TrendingUp, Clock, DollarSign, Briefcase } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Trophy, TrendingUp, Clock, DollarSign, Briefcase, Calendar, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { JobClosureReportItem, ClosedJobsByRecruiterItem } from "@shared/schema";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export default function JobClosureReport() {
+  const [selectedMonth, setSelectedMonth] = useState<string>("");
+
   const { data: reportData, isLoading } = useQuery<JobClosureReportItem[]>({
-    queryKey: ["/api/reports/job-closure"],
+    queryKey: ["/api/reports/job-closure", selectedMonth],
+    queryFn: async () => {
+      const url = selectedMonth 
+        ? `/api/reports/job-closure?month=${selectedMonth}`
+        : '/api/reports/job-closure';
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Failed to fetch');
+      return response.json();
+    },
   });
 
   const { data: closedJobsData, isLoading: isLoadingClosedJobs } = useQuery<ClosedJobsByRecruiterItem[]>({
-    queryKey: ["/api/reports/closed-jobs-by-recruiter"],
+    queryKey: ["/api/reports/closed-jobs-by-recruiter", selectedMonth],
+    queryFn: async () => {
+      const url = selectedMonth 
+        ? `/api/reports/closed-jobs-by-recruiter?month=${selectedMonth}`
+        : '/api/reports/closed-jobs-by-recruiter';
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Failed to fetch');
+      return response.json();
+    },
   });
 
   const formatCurrency = (value: number) => {
@@ -45,11 +72,58 @@ export default function JobClosureReport() {
     }
   };
 
+  const getMonthOptions = () => {
+    const options = [];
+    const now = new Date();
+    
+    for (let i = 0; i < 12; i++) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const value = format(date, 'yyyy-MM');
+      const label = format(date, 'MMMM yyyy', { locale: ptBR });
+      options.push({ value, label: label.charAt(0).toUpperCase() + label.slice(1) });
+    }
+    
+    return options;
+  };
+
   return (
     <>
       <TopBar title="Relatório de Fechamento de Vagas" />
 
       <div className="space-y-6">
+        {/* Filtro de Mês */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 flex-1">
+                <Calendar className="h-5 w-5 text-muted-foreground" />
+                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                  <SelectTrigger className="w-[250px]" data-testid="select-month-filter">
+                    <SelectValue placeholder="Todos os meses" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getMonthOptions().map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedMonth && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedMonth("")}
+                    data-testid="button-clear-month-filter"
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Limpar filtro
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
         {/* Summary Cards */}
         {reportData && reportData.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

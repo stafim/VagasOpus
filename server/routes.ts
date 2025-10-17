@@ -549,12 +549,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Convert ISO strings to Date objects for Drizzle timestamp columns
       const jobDataForDb: any = { ...validatedData };
-      if (jobDataForDb.openingDate) jobDataForDb.openingDate = new Date(jobDataForDb.openingDate);
-      if (jobDataForDb.startDate) jobDataForDb.startDate = new Date(jobDataForDb.startDate);
-      if (jobDataForDb.expiresAt) jobDataForDb.expiresAt = new Date(jobDataForDb.expiresAt);
-      if (jobDataForDb.slaDeadline) jobDataForDb.slaDeadline = new Date(jobDataForDb.slaDeadline);
       
-      console.log("Data for DB (with Date objects):", jobDataForDb);
+      console.log("Before date conversion - slaDeadline type:", typeof jobDataForDb.slaDeadline, "value:", jobDataForDb.slaDeadline);
+      
+      if (jobDataForDb.openingDate) {
+        console.log("Converting openingDate:", jobDataForDb.openingDate);
+        jobDataForDb.openingDate = new Date(jobDataForDb.openingDate);
+      }
+      if (jobDataForDb.startDate) {
+        console.log("Converting startDate:", jobDataForDb.startDate);
+        jobDataForDb.startDate = new Date(jobDataForDb.startDate);
+      }
+      if (jobDataForDb.expiresAt) {
+        console.log("Converting expiresAt:", jobDataForDb.expiresAt);
+        jobDataForDb.expiresAt = new Date(jobDataForDb.expiresAt);
+      }
+      if (jobDataForDb.slaDeadline) {
+        console.log("Converting slaDeadline:", jobDataForDb.slaDeadline);
+        jobDataForDb.slaDeadline = new Date(jobDataForDb.slaDeadline);
+        console.log("Converted slaDeadline to:", jobDataForDb.slaDeadline, "type:", typeof jobDataForDb.slaDeadline);
+      }
+      
+      console.log("Date conversion complete. About to call storage.createJob");
       
       // Validate profession exists and is active  
       const profession = await storage.getProfession(validatedData.professionId);

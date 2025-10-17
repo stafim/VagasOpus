@@ -6,6 +6,23 @@ This is a job management system (VagasPro) built with React and Express, designe
 
 # Recent Changes (October 17, 2025)
 
+## Job Details Modal - Timeline View
+- **Created**: New modal to display job history and timeline
+- **Features**:
+  - Accessible via "Ver Detalhes" (eye icon) button in jobs table
+  - Timeline format showing:
+    - **Abertura**: Who created the job and when (createdBy + createdAt)
+    - **Aprovação**: Shows if job status is "aprovada" or beyond with update timestamp
+    - **Recrutador**: Displays assigned recruiter information
+    - **Fechamento/Cancelamento**: Shows closure/cancellation date if applicable
+  - Color-coded icons for each event type (blue, green, purple, gray/red)
+  - Additional information section with current status, company, profession
+- **Technical**:
+  - Component: `JobDetailsModal.tsx`
+  - Uses existing job data (creator, recruiter, status, timestamps)
+  - Read-only view - editing still done via edit modal
+- **Limitation**: Current schema tracks createdBy, recruiterId, status, and timestamps but doesn't have dedicated approval/status change history table
+
 ## Job Manager Column - Gestor (Manager)
 - **Added**: "Gestor" column in jobs table showing who created each job
 - **Features**:

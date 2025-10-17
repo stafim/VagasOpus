@@ -5,6 +5,7 @@ import type { JobsListResponse } from "@shared/schema";
 import Layout from "@/components/Layout";
 import TopBar from "@/components/TopBar";
 import JobModal from "@/components/JobModal";
+import JobDetailsModal from "@/components/JobDetailsModal";
 import JobStatusSelect from "@/components/JobStatusSelect";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -83,7 +84,9 @@ const calculateSLA = (createdAt: string, slaDeadline: string) => {
 
 export default function Jobs() {
   const [showJobModal, setShowJobModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [editingJobId, setEditingJobId] = useState<string | undefined>();
+  const [detailsJobId, setDetailsJobId] = useState<string | undefined>();
   const [search, setSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
@@ -260,6 +263,16 @@ export default function Jobs() {
   const handleCloseModal = () => {
     setShowJobModal(false);
     setEditingJobId(undefined);
+  };
+
+  const handleViewDetails = (jobId: string) => {
+    setDetailsJobId(jobId);
+    setShowDetailsModal(true);
+  };
+
+  const handleCloseDetailsModal = () => {
+    setShowDetailsModal(false);
+    setDetailsJobId(undefined);
   };
 
   const handleAssignToMe = (jobId: string) => {
@@ -661,7 +674,7 @@ export default function Jobs() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleEditJob(job.id)}
+                              onClick={() => handleViewDetails(job.id)}
                               title="Ver detalhes da vaga"
                               data-testid={`button-details-${job.id}`}
                             >
@@ -698,6 +711,13 @@ export default function Jobs() {
         isOpen={showJobModal}
         onClose={handleCloseModal}
         jobId={editingJobId}
+      />
+
+      {/* Job Details Modal */}
+      <JobDetailsModal
+        isOpen={showDetailsModal}
+        onClose={handleCloseDetailsModal}
+        jobId={detailsJobId}
       />
     </>
   );

@@ -161,19 +161,19 @@ export interface IStorage {
   advanceApplicationStage(applicationId: string, stageId: string, score: number, feedback?: string): Promise<void>;
   
   // Analytics operations
-  getDashboardMetrics(): Promise<{
+  getDashboardMetrics(month?: string): Promise<{
     totalJobs: number;
     activeJobs: number;
     totalApplications: number;
     totalCompanies: number;
   }>;
   
-  getJobsByStatus(): Promise<Array<{ status: string; count: number }>>;
+  getJobsByStatus(month?: string): Promise<Array<{ status: string; count: number }>>;
   getApplicationsByMonth(): Promise<Array<{ month: string; count: number }>>;
   getOpenJobsByMonth(): Promise<Array<{ month: string; count: number }>>;
-  getJobsByCreator(): Promise<Array<{ creatorId: string; creatorName: string; count: number }>>;
-  getJobsByCompany(): Promise<Array<{ companyId: string; companyName: string; count: number }>>;
-  getJobsSLA(): Promise<{ withinSLA: number; outsideSLA: number }>;
+  getJobsByCreator(month?: string): Promise<Array<{ creatorId: string; creatorName: string; count: number }>>;
+  getJobsByCompany(month?: string): Promise<Array<{ companyId: string; companyName: string; count: number }>>;
+  getJobsSLA(month?: string): Promise<{ withinSLA: number; outsideSLA: number }>;
   
   // Selection process analytics
   getSelectionProcessMetrics(companyId?: string, timeframe?: string): Promise<SelectionProcessMetrics>;
@@ -1109,17 +1109,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Analytics operations
-  async getDashboardMetrics(): Promise<{
+  async getDashboardMetrics(month?: string): Promise<{
     totalJobs: number;
     activeJobs: number;
     totalApplications: number;
     totalCompanies: number;
   }> {
-    const [totalJobsResult] = await db.select({ count: count() }).from(jobs);
-    const [activeJobsResult] = await db
-      .select({ count: count() })
-      .from(jobs)
-      .where(eq(jobs.status, "active"));
+    let totalJobsQuery = db.select({ count: count() }).from(jobs);
+    let activeJobsQuery = db.select({ count: count() }).from(jobs).where(eq(jobs.status, "active"));
+    
+    if (month) {
+      totalJobsQuery = totalJobsQuery.where(sql`strftime('%Y-%m', ${jobs.createdAt}) = ${month}`);
+      activeJobsQuery = activeJobsQuery.where(sql`strftime('%Y-%m', ${jobs.createdAt}) = ${month}`);
+    }
+    
+    const [totalJobsResult] = await totalJobsQuery;
+    const [activeJobsResult] = await activeJobsQuery;
     const [totalApplicationsResult] = await db.select({ count: count() }).from(applications);
     const [totalCompaniesResult] = await db.select({ count: count() }).from(companies);
 
@@ -1131,14 +1136,19 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async getJobsByStatus(): Promise<Array<{ status: string; count: number }>> {
-    const result = await db
+  async getJobsByStatus(month?: string): Promise<Array<{ status: string; count: number }>> {
+    let query = db
       .select({
         status: jobs.status,
         count: count(),
       })
-      .from(jobs)
-      .groupBy(jobs.status);
+      .from(jobs);
+    
+    if (month) {
+      query = query.where(sql`strftime('%Y-%m', ${jobs.createdAt}) = ${month}`);
+    }
+    
+    const result = await query.groupBy(jobs.status);
     
     return result.map(row => ({
       status: row.status || '',
@@ -1170,15 +1180,21 @@ export class DatabaseStorage implements IStorage {
       .orderBy(sql`TO_CHAR(${jobs.createdAt}, 'YYYY-MM')`);
   }
 
-  async getJobsByCreator(): Promise<Array<{ creatorId: string; creatorName: string; count: number }>> {
-    const result = await db
+  async getJobsByCreator(month?: string): Promise<Array<{ creatorId: string; creatorName: string; count: number }>> {
+    let query = db
       .select({
         creatorId: jobs.createdBy,
         creatorName: sql<string>`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
         count: count(),
       })
       .from(jobs)
-      .leftJoin(users, eq(jobs.createdBy, users.id))
+      .leftJoin(users, eq(jobs.createdBy, users.id));
+    
+    if (month) {
+      query = query.where(sql`strftime('%Y-%m', ${jobs.createdAt}) = ${month}`);
+    }
+    
+    const result = await query
       .groupBy(jobs.createdBy, users.firstName, users.lastName, users.email)
       .orderBy(desc(count()));
     
@@ -1189,15 +1205,21 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  async getJobsByCompany(): Promise<Array<{ companyId: string; companyName: string; count: number }>> {
-    const result = await db
+  async getJobsByCompany(month?: string): Promise<Array<{ companyId: string; companyName: string; count: number }>> {
+    let query = db
       .select({
         companyId: jobs.companyId,
         companyName: companies.name,
         count: count(),
       })
       .from(jobs)
-      .leftJoin(companies, eq(jobs.companyId, companies.id))
+      .leftJoin(companies, eq(jobs.companyId, companies.id));
+    
+    if (month) {
+      query = query.where(sql`strftime('%Y-%m', ${jobs.createdAt}) = ${month}`);
+    }
+    
+    const result = await query
       .groupBy(jobs.companyId, companies.name)
       .orderBy(desc(count()));
     
@@ -1208,15 +1230,21 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  async getJobsSLA(): Promise<{ withinSLA: number; outsideSLA: number }> {
+  async getJobsSLA(month?: string): Promise<{ withinSLA: number; outsideSLA: number }> {
     const now = new Date();
     
-    const allJobs = await db
+    let query = db
       .select({
         slaDeadline: jobs.slaDeadline,
       })
       .from(jobs)
       .where(sql`${jobs.slaDeadline} IS NOT NULL`);
+    
+    if (month) {
+      query = query.where(sql`strftime('%Y-%m', ${jobs.createdAt}) = ${month}`);
+    }
+    
+    const allJobs = await query;
     
     let withinSLA = 0;
     let outsideSLA = 0;

@@ -52,7 +52,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard metrics
   app.get('/api/dashboard/metrics', isAuthenticated, async (req, res) => {
     try {
-      const metrics = await storage.getDashboardMetrics();
+      const month = req.query.month as string | undefined;
+      const metrics = await storage.getDashboardMetrics(month);
       res.json(metrics);
     } catch (error) {
       console.error("Error fetching dashboard metrics:", error);
@@ -62,7 +63,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/dashboard/jobs-by-status', isAuthenticated, async (req, res) => {
     try {
-      const data = await storage.getJobsByStatus();
+      const month = req.query.month as string | undefined;
+      const data = await storage.getJobsByStatus(month);
       res.json(data);
     } catch (error) {
       console.error("Error fetching jobs by status:", error);
@@ -92,7 +94,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/dashboard/jobs-by-creator', isAuthenticated, async (req, res) => {
     try {
-      const data = await storage.getJobsByCreator();
+      const month = req.query.month as string | undefined;
+      const data = await storage.getJobsByCreator(month);
       res.json(data);
     } catch (error) {
       console.error("Error fetching jobs by creator:", error);
@@ -102,7 +105,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/dashboard/jobs-by-company', isAuthenticated, async (req, res) => {
     try {
-      const data = await storage.getJobsByCompany();
+      const month = req.query.month as string | undefined;
+      const data = await storage.getJobsByCompany(month);
       res.json(data);
     } catch (error) {
       console.error("Error fetching jobs by company:", error);
@@ -112,7 +116,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/dashboard/jobs-sla', isAuthenticated, async (req, res) => {
     try {
-      const data = await storage.getJobsSLA();
+      const month = req.query.month as string | undefined;
+      const data = await storage.getJobsSLA(month);
       res.json(data);
     } catch (error) {
       console.error("Error fetching jobs SLA:", error);

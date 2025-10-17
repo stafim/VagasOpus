@@ -19,7 +19,6 @@ interface JobStatusSelectProps {
 }
 
 const statusLabels: Record<string, string> = {
-  active: "Ativa",
   closed: "Fechada",
   aberto: "Aberto",
   aprovada: "Aprovada",
@@ -28,7 +27,6 @@ const statusLabels: Record<string, string> = {
 };
 
 const statusVariants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  active: "default",
   closed: "destructive",
   aberto: "default",
   aprovada: "default",
@@ -112,9 +110,6 @@ export default function JobStatusSelect({ jobId, currentStatus, onStatusChange }
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="active" data-testid="status-option-active">
-            {statusLabels.active}
-          </SelectItem>
           <SelectItem value="aberto" data-testid="status-option-aberto">
             {statusLabels.aberto}
           </SelectItem>

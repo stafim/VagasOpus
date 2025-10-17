@@ -55,7 +55,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 
 const statusLabels: Record<string, string> = {
-  active: "Ativa",
   closed: "Fechada",
   aberto: "Aberto",
   em_recrutamento: "Em Recrutamento",
@@ -181,7 +180,6 @@ export default function Jobs() {
   });
 
   const statusVariants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-    active: "default",
     closed: "destructive"
   };
 

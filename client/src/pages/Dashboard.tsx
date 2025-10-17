@@ -156,17 +156,6 @@ export default function Dashboard() {
     }
   });
 
-  const { data: jobsStatusSummary, isLoading: jobsStatusSummaryLoading } = useQuery<JobsByStatusResponse>({
-    queryKey: ["/api/dashboard/jobs-status-summary", selectedMonth],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (selectedMonth !== "all") params.append("month", selectedMonth);
-      const res = await fetch(`/api/dashboard/jobs-status-summary?${params}`, { credentials: "include" });
-      if (!res.ok) throw new Error('Failed to fetch jobs status summary');
-      return await res.json();
-    }
-  });
-
   const { data: jobs, isLoading: jobsLoading } = useQuery<JobsListResponse>({
     queryKey: ["/api/jobs", search],
     queryFn: async () => {
@@ -239,8 +228,8 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Metrics Cards */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Metrics Card */}
+        <div className="grid grid-cols-1 gap-6">
           {metricsLoading ? (
             <Skeleton className="h-32 w-full" />
           ) : (
@@ -254,45 +243,6 @@ export default function Dashboard() {
               trend={{ value: "+12%", isPositive: true }}
             />
           )}
-
-          {/* Status Summary Card */}
-          <Card className="shadow-sm hover:shadow-lg transition-shadow duration-200">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <div className="w-2 h-2 bg-chart-1 rounded-full"></div>
-                Resumo por Status
-              </CardTitle>
-              <CardDescription>Vagas aprovadas, em recrutamento, documentação e fechadas</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {jobsStatusSummaryLoading ? (
-                <Skeleton className="h-64 w-full" />
-              ) : (
-                <ResponsiveContainer width="100%" height={240}>
-                  <BarChart data={jobsStatusSummary?.map((item) => ({
-                    name: statusLabels[item.status] || item.status,
-                    value: item.count
-                  })) || []} layout="horizontal">
-                    <XAxis type="number" />
-                    <YAxis dataKey="name" type="category" width={150} />
-                    <Tooltip 
-                      contentStyle={{
-                        backgroundColor: 'hsl(var(--popover))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                      }}
-                    />
-                    <Bar dataKey="value" radius={[0, 8, 8, 0]}>
-                      {jobsStatusSummary?.map((entry, index: number) => (
-                        <Cell key={`cell-${index}`} fill={statusColors[entry.status] || '#6b7280'} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
-            </CardContent>
-          </Card>
         </div>
 
         {/* Charts Section */}

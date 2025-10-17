@@ -125,7 +125,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/dashboard/jobs-status-summary', isAuthenticated, async (req, res) => {
+  app.get('/api/dashboard/jobs-status-summary', async (req, res) => {
     try {
       const month = req.query.month as string | undefined;
       const data = await storage.getJobsStatusSummary(month);

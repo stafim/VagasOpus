@@ -57,7 +57,7 @@ const statusColors: Record<string, string> = {
   aprovada: '#3B82F6',    // Azul médio
   em_recrutamento: '#60A5FA', // Azul sky
   em_documentacao: '#2563EB', // Azul royal
-  closed: '#1D4ED8'       // Azul escuro
+  closed: '#10b981'       // Verde
 };
 
 const statusLabels: Record<string, string> = {
@@ -372,7 +372,7 @@ export default function Dashboard() {
                       stroke="hsl(var(--background))"
                     >
                       {jobsByCreator?.slice(0, 5).map((_, index: number) => (
-                        <Cell key={`cell-${index}`} fill={['#3B82F6', '#60A5FA', '#2563EB', '#1D4ED8', '#5B9FED'][index % 5]} />
+                        <Cell key={`cell-${index}`} fill={['#3B82F6', '#60A5FA', '#2563EB', '#10b981', '#5B9FED'][index % 5]} />
                       )) || []}
                     </Pie>
                     <Tooltip 
@@ -419,7 +419,7 @@ export default function Dashboard() {
                       stroke="hsl(var(--background))"
                     >
                       {jobsByCompany?.slice(0, 5).map((_, index: number) => (
-                        <Cell key={`cell-${index}`} fill={['#1D4ED8', '#3B82F6', '#5B9FED', '#60A5FA', '#2563EB'][index % 5]} />
+                        <Cell key={`cell-${index}`} fill={['#10b981', '#3B82F6', '#5B9FED', '#60A5FA', '#2563EB'][index % 5]} />
                       )) || []}
                     </Pie>
                     <Tooltip 

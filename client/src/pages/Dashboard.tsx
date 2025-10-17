@@ -1,5 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import type { DashboardMetrics, JobsByStatusResponse, ApplicationsByMonthResponse, JobsListResponse } from "@shared/schema";
+import type { 
+  DashboardMetrics, 
+  JobsByStatusResponse, 
+  ApplicationsByMonthResponse, 
+  JobsListResponse,
+  OpenJobsByMonthResponse,
+  JobsByCreatorResponse,
+  JobsByCompanyResponse
+} from "@shared/schema";
 import { useState } from "react";
 import Layout from "@/components/Layout";
 import MetricsCard from "@/components/MetricsCard";
@@ -74,6 +82,18 @@ export default function Dashboard() {
     queryKey: ["/api/dashboard/applications-by-month"],
   });
 
+  const { data: openJobsByMonth, isLoading: openJobsByMonthLoading } = useQuery<OpenJobsByMonthResponse>({
+    queryKey: ["/api/dashboard/open-jobs-by-month"],
+  });
+
+  const { data: jobsByCreator, isLoading: jobsByCreatorLoading } = useQuery<JobsByCreatorResponse>({
+    queryKey: ["/api/dashboard/jobs-by-creator"],
+  });
+
+  const { data: jobsByCompany, isLoading: jobsByCompanyLoading } = useQuery<JobsByCompanyResponse>({
+    queryKey: ["/api/dashboard/jobs-by-company"],
+  });
+
   const { data: jobs, isLoading: jobsLoading } = useQuery<JobsListResponse>({
     queryKey: ["/api/jobs", { limit: 10, offset: 0, search }],
   });
@@ -138,52 +158,206 @@ export default function Dashboard() {
         </div>
 
         {/* Charts Section */}
-        <Card className="shadow-sm hover:shadow-lg transition-shadow duration-200">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg font-semibold flex items-center gap-2">
-              <div className="w-2 h-2 bg-primary rounded-full"></div>
-              Vagas por Status
-            </CardTitle>
-            <CardDescription>Distribuição das vagas por situação atual</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {jobsByStatusLoading ? (
-              <Skeleton className="h-64 w-full" />
-            ) : (
-              <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <Pie
-                    data={jobsByStatus?.map((item) => ({
-                      name: statusLabels[item.status] || item.status,
-                      value: item.count
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="shadow-sm hover:shadow-lg transition-shadow duration-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                <div className="w-2 h-2 bg-primary rounded-full"></div>
+                Vagas por Status
+              </CardTitle>
+              <CardDescription>Distribuição das vagas por situação atual</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {jobsByStatusLoading ? (
+                <Skeleton className="h-64 w-full" />
+              ) : (
+                <ResponsiveContainer width="100%" height={280}>
+                  <PieChart>
+                    <Pie
+                      data={jobsByStatus?.map((item) => ({
+                        name: statusLabels[item.status] || item.status,
+                        value: item.count
+                      })) || []}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={90}
+                      fill="hsl(var(--primary))"
+                      dataKey="value"
+                      strokeWidth={2}
+                      stroke="hsl(var(--background))"
+                    >
+                      {jobsByStatus?.map((entry, index: number) => (
+                        <Cell key={`cell-${index}`} fill={statusColors[entry.status] || '#6b7280'} />
+                      )) || []}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--popover))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-sm hover:shadow-lg transition-shadow duration-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                <div className="w-2 h-2 bg-chart-2 rounded-full"></div>
+                Total de Vagas Abertas
+              </CardTitle>
+              <CardDescription>Evolução mensal de abertura de vagas</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {openJobsByMonthLoading ? (
+                <Skeleton className="h-64 w-full" />
+              ) : (
+                <ResponsiveContainer width="100%" height={280}>
+                  <LineChart
+                    data={openJobsByMonth?.map((item) => ({
+                      month: item.month,
+                      count: item.count
                     })) || []}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={90}
-                    fill="hsl(var(--primary))"
-                    dataKey="value"
-                    strokeWidth={2}
-                    stroke="hsl(var(--background))"
+                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                   >
-                    {jobsByStatus?.map((entry, index: number) => (
-                      <Cell key={`cell-${index}`} fill={statusColors[entry.status] || '#6b7280'} />
-                    )) || []}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--popover))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                    <XAxis 
+                      dataKey="month" 
+                      stroke="hsl(var(--muted-foreground))"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis 
+                      stroke="hsl(var(--muted-foreground))"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <Tooltip 
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--popover))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                      }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="count" 
+                      stroke="#3b82f6" 
+                      strokeWidth={3}
+                      dot={{ fill: '#3b82f6', strokeWidth: 2, r: 5 }}
+                      activeDot={{ r: 7, stroke: '#3b82f6', strokeWidth: 2, fill: 'hsl(var(--background))' }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="shadow-sm hover:shadow-lg transition-shadow duration-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                <div className="w-2 h-2 bg-chart-3 rounded-full"></div>
+                Vagas por Criador
+              </CardTitle>
+              <CardDescription>Top 5 criadores de vagas</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {jobsByCreatorLoading ? (
+                <Skeleton className="h-64 w-full" />
+              ) : (
+                <ResponsiveContainer width="100%" height={280}>
+                  <PieChart>
+                    <Pie
+                      data={jobsByCreator?.slice(0, 5).map((item) => ({
+                        name: item.creatorName,
+                        value: item.count
+                      })) || []}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={90}
+                      fill="hsl(var(--chart-3))"
+                      dataKey="value"
+                      strokeWidth={2}
+                      stroke="hsl(var(--background))"
+                    >
+                      {jobsByCreator?.slice(0, 5).map((_, index: number) => (
+                        <Cell key={`cell-${index}`} fill={['#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#3b82f6'][index % 5]} />
+                      )) || []}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--popover))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-sm hover:shadow-lg transition-shadow duration-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                <div className="w-2 h-2 bg-chart-4 rounded-full"></div>
+                Vagas por Empresa
+              </CardTitle>
+              <CardDescription>Top 5 empresas com mais vagas</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {jobsByCompanyLoading ? (
+                <Skeleton className="h-64 w-full" />
+              ) : (
+                <ResponsiveContainer width="100%" height={280}>
+                  <PieChart>
+                    <Pie
+                      data={jobsByCompany?.slice(0, 5).map((item) => ({
+                        name: item.companyName,
+                        value: item.count
+                      })) || []}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={90}
+                      fill="hsl(var(--chart-4))"
+                      dataKey="value"
+                      strokeWidth={2}
+                      stroke="hsl(var(--background))"
+                    >
+                      {jobsByCompany?.slice(0, 5).map((_, index: number) => (
+                        <Cell key={`cell-${index}`} fill={['#ef4444', '#10b981', '#3b82f6', '#f59e0b', '#8b5cf6'][index % 5]} />
+                      )) || []}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--popover))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Recent Jobs Table */}
         <Card className="shadow-sm hover:shadow-lg transition-shadow duration-200">

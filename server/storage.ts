@@ -170,6 +170,9 @@ export interface IStorage {
   
   getJobsByStatus(): Promise<Array<{ status: string; count: number }>>;
   getApplicationsByMonth(): Promise<Array<{ month: string; count: number }>>;
+  getOpenJobsByMonth(): Promise<Array<{ month: string; count: number }>>;
+  getJobsByCreator(): Promise<Array<{ creatorId: string; creatorName: string; count: number }>>;
+  getJobsByCompany(): Promise<Array<{ companyId: string; companyName: string; count: number }>>;
   
   // Selection process analytics
   getSelectionProcessMetrics(companyId?: string, timeframe?: string): Promise<SelectionProcessMetrics>;
@@ -1152,6 +1155,56 @@ export class DatabaseStorage implements IStorage {
       .where(sql`${applications.appliedAt} >= NOW() - INTERVAL '12 months'`)
       .groupBy(sql`TO_CHAR(${applications.appliedAt}, 'YYYY-MM')`)
       .orderBy(sql`TO_CHAR(${applications.appliedAt}, 'YYYY-MM')`);
+  }
+
+  async getOpenJobsByMonth(): Promise<Array<{ month: string; count: number }>> {
+    return await db
+      .select({
+        month: sql<string>`TO_CHAR(${jobs.createdAt}, 'YYYY-MM')`,
+        count: count(),
+      })
+      .from(jobs)
+      .where(sql`${jobs.createdAt} >= NOW() - INTERVAL '12 months'`)
+      .groupBy(sql`TO_CHAR(${jobs.createdAt}, 'YYYY-MM')`)
+      .orderBy(sql`TO_CHAR(${jobs.createdAt}, 'YYYY-MM')`);
+  }
+
+  async getJobsByCreator(): Promise<Array<{ creatorId: string; creatorName: string; count: number }>> {
+    const result = await db
+      .select({
+        creatorId: jobs.createdBy,
+        creatorName: sql<string>`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
+        count: count(),
+      })
+      .from(jobs)
+      .leftJoin(users, eq(jobs.createdBy, users.id))
+      .groupBy(jobs.createdBy, users.firstName, users.lastName, users.email)
+      .orderBy(desc(count()));
+    
+    return result.map(row => ({
+      creatorId: row.creatorId || '',
+      creatorName: row.creatorName || 'Sem criador',
+      count: row.count
+    }));
+  }
+
+  async getJobsByCompany(): Promise<Array<{ companyId: string; companyName: string; count: number }>> {
+    const result = await db
+      .select({
+        companyId: jobs.companyId,
+        companyName: companies.name,
+        count: count(),
+      })
+      .from(jobs)
+      .leftJoin(companies, eq(jobs.companyId, companies.id))
+      .groupBy(jobs.companyId, companies.name)
+      .orderBy(desc(count()));
+    
+    return result.map(row => ({
+      companyId: row.companyId || '',
+      companyName: row.companyName || 'Sem empresa',
+      count: row.count
+    }));
   }
 
   // Selection process analytics

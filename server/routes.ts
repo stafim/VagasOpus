@@ -80,6 +80,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/dashboard/open-jobs-by-month', isAuthenticated, async (req, res) => {
+    try {
+      const data = await storage.getOpenJobsByMonth();
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching open jobs by month:", error);
+      res.status(500).json({ message: "Failed to fetch open jobs by month" });
+    }
+  });
+
+  app.get('/api/dashboard/jobs-by-creator', isAuthenticated, async (req, res) => {
+    try {
+      const data = await storage.getJobsByCreator();
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching jobs by creator:", error);
+      res.status(500).json({ message: "Failed to fetch jobs by creator" });
+    }
+  });
+
+  app.get('/api/dashboard/jobs-by-company', isAuthenticated, async (req, res) => {
+    try {
+      const data = await storage.getJobsByCompany();
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching jobs by company:", error);
+      res.status(500).json({ message: "Failed to fetch jobs by company" });
+    }
+  });
+
   app.get('/api/reports/job-closure', isAuthenticated, async (req, res) => {
     try {
       const report = await storage.getJobClosureReport();

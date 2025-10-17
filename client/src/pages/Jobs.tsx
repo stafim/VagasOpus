@@ -352,6 +352,7 @@ export default function Jobs() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>ID Vaga</TableHead>
                     <TableHead>Profissão</TableHead>
                     <TableHead>Empresa</TableHead>
                     <TableHead>Recrutador</TableHead>
@@ -368,6 +369,11 @@ export default function Jobs() {
                   {jobs && jobs.length > 0 ? (
                     jobs.map((job: any) => (
                       <TableRow key={job.id} data-testid={`row-job-${job.id}`}>
+                        <TableCell>
+                          <div className="font-bold text-primary" data-testid={`text-job-code-${job.id}`}>
+                            {job.jobCode || "N/A"}
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <div>
                             <div className="font-medium text-foreground">
@@ -504,7 +510,7 @@ export default function Jobs() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-12">
+                      <TableCell colSpan={11} className="text-center py-12">
                         <div className="text-muted-foreground">
                           <Briefcase className="h-16 w-16 mb-4" />
                           <p className="text-lg font-medium mb-2">Nenhuma vaga encontrada</p>

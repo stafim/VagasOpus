@@ -51,6 +51,7 @@ export const companies = pgTable("companies", {
   description: text("description"),
   website: varchar("website"),
   logo: varchar("logo"),
+  jobCounter: integer("job_counter").default(0), // Contador para IDs de vagas
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -206,6 +207,7 @@ export const benefits = pgTable("benefits", {
 // Jobs table - temporarily keeping both title and professionId for migration
 export const jobs = pgTable("jobs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  jobCode: varchar("job_code", { length: 50 }).unique(), // ID legível da vaga (ex: OPUS001, TELOS001)
   title: varchar("title", { length: 255 }), // Keep existing field temporarily
   professionId: varchar("profession_id").references(() => professions.id), // Add new field as optional
   description: text("description"),

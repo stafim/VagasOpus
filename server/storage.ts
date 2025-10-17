@@ -693,7 +693,47 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createJob(job: InsertJob): Promise<Job> {
-    const [newJob] = await db.insert(jobs).values(job).returning();
+    // Generate job code if company is provided
+    let jobCode = job.jobCode;
+    
+    if (!jobCode && job.companyId) {
+      // Get company to extract initials
+      const [company] = await db
+        .select()
+        .from(companies)
+        .where(eq(companies.id, job.companyId));
+      
+      if (company) {
+        // Extract company initials (first word or first 4-5 letters)
+        const companyName = company.name.toUpperCase();
+        let initials = '';
+        
+        // Try to get first word
+        const firstWord = companyName.split(' ')[0];
+        if (firstWord.length >= 3) {
+          initials = firstWord.substring(0, Math.min(5, firstWord.length));
+        } else {
+          // If first word is too short, take first letters of multiple words
+          const words = companyName.split(' ').filter(w => w.length > 0);
+          initials = words.slice(0, 2).map(w => w[0]).join('');
+          if (initials.length < 3) {
+            initials = companyName.replace(/\s/g, '').substring(0, 5);
+          }
+        }
+        
+        // Increment counter
+        const [updatedCompany] = await db
+          .update(companies)
+          .set({ jobCounter: sql`${companies.jobCounter} + 1` })
+          .where(eq(companies.id, job.companyId))
+          .returning({ jobCounter: companies.jobCounter });
+        
+        const counter = updatedCompany.jobCounter || 1;
+        jobCode = `${initials}${String(counter).padStart(3, '0')}`;
+      }
+    }
+    
+    const [newJob] = await db.insert(jobs).values({ ...job, jobCode }).returning();
     return newJob;
   }
 

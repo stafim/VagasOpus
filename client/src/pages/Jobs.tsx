@@ -355,7 +355,6 @@ export default function Jobs() {
                     <TableHead>ID Vaga</TableHead>
                     <TableHead>Profissão</TableHead>
                     <TableHead>Empresa</TableHead>
-                    <TableHead>Recrutador</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Candidatos</TableHead>
                     <TableHead>Salário</TableHead>
@@ -392,18 +391,6 @@ export default function Jobs() {
                         <TableCell>
                           <div className="text-sm text-foreground">
                             {job.company?.name || "N/A"}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2 text-sm text-foreground">
-                            {job.recruiter ? (
-                              <>
-                                <User className="h-4 w-4 text-green-600" />
-                                <span>{job.recruiter.firstName} {job.recruiter.lastName}</span>
-                              </>
-                            ) : (
-                              <span className="text-muted-foreground">Não atribuído</span>
-                            )}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -504,7 +491,7 @@ export default function Jobs() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={10} className="text-center py-12">
+                      <TableCell colSpan={9} className="text-center py-12">
                         <div className="text-muted-foreground">
                           <Briefcase className="h-16 w-16 mb-4" />
                           <p className="text-lg font-medium mb-2">Nenhuma vaga encontrada</p>

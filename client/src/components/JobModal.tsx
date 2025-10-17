@@ -55,7 +55,6 @@ const jobFormSchema = z.object({
   description: z.string().optional().default(""),
   companyId: z.string().min(1, "Empresa é obrigatória"),
   costCenterId: z.string().optional(),
-  recruiterId: z.string().optional(),
   department: z.string().optional().default(""),
   location: z.string().optional().default(""),
   contractType: z.enum(["clt", "pj", "freelancer", "estagio", "temporario"]).default("clt"),
@@ -116,10 +115,6 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
     queryKey: ["/api/clients"],
   });
 
-  const { data: recruiters } = useQuery({
-    queryKey: ["/api/recruiters"],
-  });
-
   const { data: workScales } = useQuery<WorkScale[]>({
     queryKey: ["/api/work-scales"],
   });
@@ -134,7 +129,6 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
     defaultValues: {
       professionId: "",
       description: "",
-      recruiterId: "",
       department: "",
       location: "",
       contractType: "clt",
@@ -161,7 +155,6 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
         location: jobData.location || "",
         companyId: jobData.companyId || undefined,
         costCenterId: jobData.costCenterId || undefined,
-        recruiterId: jobData.recruiterId || "",
         contractType: jobData.contractType || "clt",
         jobType: jobData.jobType || undefined,
         status: jobData.status || "aberto",
@@ -210,7 +203,6 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
         companyId: data.companyId,
         description: data.description || undefined,
         costCenterId: data.costCenterId || undefined,
-        recruiterId: data.recruiterId || undefined,
         department: data.department || undefined,
         location: data.location || undefined,
         contractType: data.contractType,
@@ -269,7 +261,6 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
         professionId: data.professionId,
         description: data.description || undefined,
         costCenterId: data.costCenterId || undefined,
-        recruiterId: data.recruiterId || undefined,
         department: data.department || undefined,
         location: data.location || undefined,
         contractType: data.contractType,
@@ -483,31 +474,6 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
                           {clients?.map((client) => (
                             <SelectItem key={client.id} value={client.id}>
                               {client.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="recruiterId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Recrutador</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ""}>
-                        <FormControl>
-                          <SelectTrigger data-testid="select-recruiter">
-                            <SelectValue placeholder="Selecione um recrutador" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {Array.isArray(recruiters) && recruiters.map((recruiter: any) => (
-                            <SelectItem key={recruiter.id} value={recruiter.id}>
-                              {recruiter.firstName} {recruiter.lastName}
                             </SelectItem>
                           ))}
                         </SelectContent>

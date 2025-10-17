@@ -268,7 +268,7 @@ export default function Kanban() {
                 <SelectContent>
                   {jobs.map((job: any) => (
                     <SelectItem key={job.id} value={job.id}>
-                      {job.profession?.name || job.title} - {job.company?.name}
+                      [{job.jobCode || job.id.slice(0, 6)}] {job.profession?.name || job.title} - {job.company?.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -471,7 +471,7 @@ export default function Kanban() {
                       <SelectContent>
                         {jobs.map((job: any) => (
                           <SelectItem key={job.id} value={job.id}>
-                            {job.profession?.name || job.title} - {job.company?.name}
+                            [{job.jobCode || job.id.slice(0, 6)}] {job.profession?.name || job.title} - {job.company?.name}
                           </SelectItem>
                         ))}
                       </SelectContent>

@@ -430,19 +430,20 @@ export default function Kanban() {
                               )}
 
                               {/* Date and Notes */}
-                              <div className="flex items-center justify-between pt-2 border-t">
+                              <div className="space-y-2 pt-2 border-t">
                                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                                   <Clock className="h-3 w-3" />
                                   <span>Aplicado em {formatDate(application.appliedAt)}</span>
                                 </div>
                                 <Button
-                                  variant="ghost"
+                                  variant={application.notes ? "default" : "outline"}
                                   size="sm"
                                   onClick={() => handleOpenNotes(application)}
-                                  className="h-7 px-2"
-                                  title={application.notes ? "Ver/Editar notas" : "Adicionar notas"}
+                                  className="w-full h-8"
+                                  data-testid={`button-notes-${application.id}`}
                                 >
-                                  <FileText className={`h-4 w-4 ${application.notes ? 'text-primary' : 'text-muted-foreground'}`} />
+                                  <FileText className="h-4 w-4 mr-2" />
+                                  {application.notes ? "Ver Notas" : "Adicionar Notas"}
                                 </Button>
                               </div>
                             </div>

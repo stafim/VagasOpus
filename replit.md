@@ -6,6 +6,16 @@ This is a job management system (VagasPro) built with React and Express, designe
 
 # Recent Changes (October 17, 2025)
 
+## Kanban - Botão de Notas nos Cards de Candidatos
+- **Enhanced**: Melhorado o botão de visualização/edição de notas nos cards de candidatos
+- **Features**:
+  - Botão de largura total em cada card para maior visibilidade
+  - Texto descritivo: "Ver Notas" quando há notas, "Adicionar Notas" quando não há
+  - Visual diferenciado: botão azul (default) quando tem notas, outline quando não tem
+  - Ícone FileText ao lado do texto para fácil identificação
+  - Localizado no rodapé do card, abaixo da data de aplicação
+- **UX**: Acesso rápido e intuitivo às notas do candidato diretamente do Kanban
+
 ## Dashboard - Vagas em Recrutamento por Usuário Chart
 - **Modified**: Changed "Vagas por Criador" chart to show only jobs in recruitment status
 - **Changes**:

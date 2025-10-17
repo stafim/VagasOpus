@@ -125,6 +125,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/dashboard/jobs-status-summary', isAuthenticated, async (req, res) => {
+    try {
+      const month = req.query.month as string | undefined;
+      const data = await storage.getJobsStatusSummary(month);
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching jobs status summary:", error);
+      res.status(500).json({ message: "Failed to fetch jobs status summary" });
+    }
+  });
+
   app.get('/api/reports/job-closure', isAuthenticated, async (req, res) => {
     try {
       const month = req.query.month as string | undefined;

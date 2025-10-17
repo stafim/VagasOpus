@@ -174,6 +174,7 @@ export interface IStorage {
   getJobsByCreator(month?: string): Promise<Array<{ creatorId: string; creatorName: string; count: number }>>;
   getJobsByCompany(month?: string): Promise<Array<{ companyId: string; companyName: string; count: number }>>;
   getJobsSLA(month?: string): Promise<{ withinSLA: number; outsideSLA: number }>;
+  getJobsStatusSummary(month?: string): Promise<Array<{ status: string; count: number }>>;
   
   // Selection process analytics
   getSelectionProcessMetrics(companyId?: string, timeframe?: string): Promise<SelectionProcessMetrics>;
@@ -1286,6 +1287,32 @@ export class DatabaseStorage implements IStorage {
     });
     
     return { withinSLA, outsideSLA };
+  }
+
+  async getJobsStatusSummary(month?: string): Promise<Array<{ status: string; count: number }>> {
+    const targetStatuses = ['aprovada', 'em_recrutamento', 'em_documentacao', 'closed'];
+    
+    let query = db
+      .select({
+        status: jobs.status,
+        count: count(),
+      })
+      .from(jobs)
+      .where(sql`${jobs.status} IN (${sql.raw(targetStatuses.map(s => `'${s}'`).join(','))})`);
+    
+    if (month) {
+      query = query.where(and(
+        sql`${jobs.status} IN (${sql.raw(targetStatuses.map(s => `'${s}'`).join(','))})`,
+        sql`strftime('%Y-%m', ${jobs.createdAt}) = ${month}`
+      ));
+    }
+    
+    const result = await query.groupBy(jobs.status);
+    
+    return result.map(row => ({
+      status: row.status,
+      count: row.count
+    }));
   }
 
   // Selection process analytics

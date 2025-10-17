@@ -54,6 +54,7 @@ export default function Users() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<any | null>(null);
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
+  const [roleFilter, setRoleFilter] = useState<string>("all");
   const { toast } = useToast();
 
   const form = useForm<UserFormData>({
@@ -320,10 +321,27 @@ export default function Users() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Usuários do Sistema
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Usuários do Sistema
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Select value={roleFilter} onValueChange={setRoleFilter}>
+                <SelectTrigger className="w-[200px]" data-testid="select-role-filter">
+                  <SelectValue placeholder="Filtrar por tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os tipos</SelectItem>
+                  {Object.entries(roleLabels).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {users.length === 0 ? (
@@ -332,7 +350,9 @@ export default function Users() {
             </p>
           ) : (
             <div className="space-y-4">
-              {users.map((user: any) => (
+              {users
+                .filter((user: any) => roleFilter === "all" || user.role === roleFilter)
+                .map((user: any) => (
                 <div
                   key={user.id}
                   className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"

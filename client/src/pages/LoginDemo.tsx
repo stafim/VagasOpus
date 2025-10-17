@@ -1,15 +1,11 @@
 import { useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { queryClient } from "@/lib/queryClient";
 import { Briefcase, Mail, Lock, User, ArrowRight, CheckCircle2 } from "lucide-react";
 
 const loginSchema = z.object({
@@ -27,11 +23,8 @@ const registerSchema = z.object({
 type LoginForm = z.infer<typeof loginSchema>;
 type RegisterForm = z.infer<typeof registerSchema>;
 
-export default function Landing() {
-  const { isLoading } = useAuth();
-  const { toast } = useToast();
+export default function LoginDemo() {
   const [isLogin, setIsLogin] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const loginForm = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -50,61 +43,6 @@ export default function Landing() {
       lastName: "",
     },
   });
-
-  const handleLogin = async (data: LoginForm) => {
-    setIsSubmitting(true);
-    try {
-      await apiRequest("POST", "/api/auth/login", data);
-
-      toast({
-        title: "Login realizado com sucesso",
-        description: "Redirecionando para o dashboard...",
-      });
-
-      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-    } catch (error: any) {
-      toast({
-        title: "Erro no login",
-        description: error.message || "Verifique suas credenciais",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleRegister = async (data: RegisterForm) => {
-    setIsSubmitting(true);
-    try {
-      await apiRequest("POST", "/api/auth/register", data);
-
-      toast({
-        title: "Conta criada com sucesso",
-        description: "Bem-vindo ao VagasPro!",
-      });
-
-      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-    } catch (error: any) {
-      toast({
-        title: "Erro no cadastro",
-        description: error.message || "Tente novamente",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800 flex items-center justify-center">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-white text-lg font-medium">Carregando...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800 flex items-center justify-center p-4 relative overflow-hidden">
@@ -216,7 +154,7 @@ export default function Landing() {
 
             <CardContent className="pb-8">
               {isLogin ? (
-                <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-5">
+                <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-gray-700 font-medium">Email</Label>
                     <div className="relative">
@@ -259,25 +197,17 @@ export default function Landing() {
 
                   <Button
                     type="submit"
-                    disabled={isSubmitting}
                     className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-medium shadow-lg hover:shadow-xl transition-all"
                     data-testid="button-login"
                   >
-                    {isSubmitting ? (
-                      <span className="flex items-center gap-2">
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Entrando...
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-2">
-                        Entrar
-                        <ArrowRight className="w-5 h-5" />
-                      </span>
-                    )}
+                    <span className="flex items-center gap-2">
+                      Entrar
+                      <ArrowRight className="w-5 h-5" />
+                    </span>
                   </Button>
                 </form>
               ) : (
-                <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-5">
+                <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="firstName" className="text-gray-700 font-medium">Nome</Label>
@@ -357,21 +287,13 @@ export default function Landing() {
 
                   <Button
                     type="submit"
-                    disabled={isSubmitting}
                     className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-medium shadow-lg hover:shadow-xl transition-all"
                     data-testid="button-register"
                   >
-                    {isSubmitting ? (
-                      <span className="flex items-center gap-2">
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Criando conta...
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-2">
-                        Criar conta
-                        <ArrowRight className="w-5 h-5" />
-                      </span>
-                    )}
+                    <span className="flex items-center gap-2">
+                      Criar conta
+                      <ArrowRight className="w-5 h-5" />
+                    </span>
                   </Button>
                 </form>
               )}

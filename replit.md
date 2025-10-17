@@ -4,6 +4,29 @@ This is a job management system (VagasPro) built with React and Express, designe
 
 **CURRENT STATE**: Authentication bypass mode is enabled for direct access without login/password requirements. Users can access the full application immediately without creating accounts.
 
+# Recent Changes (October 17, 2025)
+
+## Modern Login Screen Implementation
+- **Created**: Beautiful, modern login/registration interface with glassmorphism design
+- **Features**: 
+  - Gradient background (blue → indigo → purple) with decorative blur elements
+  - Two-column layout on desktop: branding information + login form
+  - Responsive mobile design with optimized single-column layout
+  - Toggle between Login and Registration forms
+  - Icon-enhanced input fields (Mail, Lock, User icons)
+  - Form validation with real-time error messages
+  - Loading states with animated spinners
+  - Gradient buttons with smooth hover effects
+- **Routes**: 
+  - Main login at `/` (when not authenticated)
+  - Demo preview at `/login-demo` (accessible anytime)
+- **Integration**: Fully integrated with existing authentication system (simpleAuth.ts)
+
+## Job Status Updates
+- **Added new statuses**: "dp", "em_mobilizacao", "cancelada"
+- **Removed status**: "paused"
+- **Updated**: All status configurations in shared/constants.ts and frontend components
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
@@ -34,9 +57,11 @@ Preferred communication style: Simple, everyday language.
 ## Authentication & Authorization
 - **CURRENT**: Simple local authentication system with bypass mode enabled
 - **Bypass Mode**: AUTH_BYPASS is active - provides immediate access as demo admin user
+- **Login Page**: Modern, responsive login/registration interface with glassmorphism design
 - **Session Management**: Express sessions with in-memory store for development
 - **Security**: BCrypt password hashing, HTTP-only cookies, secure sessions
 - **Note**: Authentication can be re-enabled by removing the temporary bypass flag
+- **Demo Route**: `/login-demo` available to preview the login screen design
 
 ## Data Layer Design
 - **Storage Pattern**: Repository pattern with IStorage interface

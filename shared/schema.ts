@@ -87,13 +87,15 @@ export const clients = pgTable("clients", {
 export const jobStatusEnum = pgEnum("job_status", [
   "draft",
   "active", 
-  "paused",
   "closed",
   "expired",
   "aberto",
   "aprovada",
   "em_recrutamento",
-  "em_documentacao"
+  "em_documentacao",
+  "dp",
+  "em_mobilizacao",
+  "cancelada"
 ]);
 
 // Contract type enum

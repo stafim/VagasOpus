@@ -492,12 +492,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let jobs = await storage.getJobs(limit, offset, search, status, companyId, professionId);
       
       // Filter jobs based on user role
-      const user = req.session?.user;
-      if (user && user.role === 'recruiter') {
-        // Recruiters cannot see jobs with status "aprovada" or "aberto"
-        jobs = jobs.filter((job: any) => 
-          job.status !== 'aprovada' && job.status !== 'aberto'
-        );
+      const userId = req.user?.id || (req.session as any).user?.id;
+      
+      // Get user's roles to check permissions
+      const userRoles = await storage.getUserCompanyRoles(userId);
+      const isRecruiter = userRoles.some((r: any) => r.role === 'recruiter');
+      const isManagerOrHR = userRoles.some((r: any) => r.role === 'manager' || r.role === 'hr_manager' || r.role === 'admin');
+      
+      // Recrutadores veem APENAS vagas com status "aprovada"
+      if (isRecruiter && !isManagerOrHR) {
+        jobs = jobs.filter((job: any) => job.status === 'aprovada');
       }
       
       res.json(jobs);
@@ -588,6 +592,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Require companyId for authorization
       if (!validatedData.companyId) {
         return res.status(400).json({ message: "Company ID is required" });
+      }
+      
+      // Apenas GESTOR e Gerente de RH podem criar vagas
+      const userRoles = await storage.getUserCompanyRoles(userId);
+      const canCreateJobs = userRoles.some((r: any) => 
+        (r.role === 'manager' || r.role === 'hr_manager' || r.role === 'admin') && 
+        r.companyId === validatedData.companyId
+      );
+      
+      if (!canCreateJobs) {
+        return res.status(403).json({ message: "Apenas Gestores e Gerentes de RH podem criar vagas" });
       }
       
       // Check permission for the specific company

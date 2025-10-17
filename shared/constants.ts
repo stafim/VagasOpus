@@ -25,10 +25,25 @@ export const JOB_STATUS_CONFIG = {
     variant: "secondary" as const,
     description: "Candidato selecionado, documentação em andamento"
   },
-  paused: {
-    label: "Pausada",
+  aprovada: {
+    label: "Aprovada",
+    variant: "default" as const,
+    description: "Vaga aprovada para recrutamento"
+  },
+  dp: {
+    label: "DP",
+    variant: "secondary" as const,
+    description: "Vaga em processamento no departamento pessoal"
+  },
+  em_mobilizacao: {
+    label: "Em Mobilização",
     variant: "outline" as const,
-    description: "Vaga temporariamente pausada"
+    description: "Candidato em processo de mobilização"
+  },
+  cancelada: {
+    label: "Cancelada",
+    variant: "destructive" as const,
+    description: "Vaga cancelada"
   },
   closed: {
     label: "Fechada",

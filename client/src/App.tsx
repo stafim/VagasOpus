@@ -18,12 +18,14 @@ import Permissions from "@/pages/Permissions";
 import Kanban from "@/pages/Kanban";
 import JobClosureReport from "@/pages/JobClosureReport";
 import Settings from "@/pages/Settings";
+import LoginDemo from "@/pages/LoginDemo";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
 
   return (
     <Switch>
+      <Route path="/login-demo" component={LoginDemo} />
       {isLoading || !isAuthenticated ? (
         <Route path="/" component={Landing} />
       ) : (

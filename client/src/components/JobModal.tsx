@@ -60,7 +60,7 @@ const jobFormSchema = z.object({
   location: z.string().optional().default(""),
   contractType: z.enum(["clt", "pj", "freelancer", "estagio", "temporario"]).default("clt"),
   jobType: z.enum(["produtiva", "improdutiva"]).optional(),
-  status: z.enum(["draft", "active", "paused", "closed", "expired", "aberto", "aprovada", "em_recrutamento", "em_documentacao"]).default("draft"),
+  status: z.enum(["draft", "active", "closed", "expired", "aberto", "aprovada", "em_recrutamento", "em_documentacao", "dp", "em_mobilizacao", "cancelada"]).default("draft"),
   
   // Novos campos detalhados
   openingDate: z.string().optional(),
@@ -1090,9 +1090,16 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="draft">Rascunho</SelectItem>
-                      <SelectItem value="active">Ativa/Publicada</SelectItem>
-                      <SelectItem value="paused">Pausada</SelectItem>
+                      <SelectItem value="active">Ativa</SelectItem>
+                      <SelectItem value="aberto">Aberto</SelectItem>
+                      <SelectItem value="aprovada">Aprovada</SelectItem>
+                      <SelectItem value="em_recrutamento">Em Recrutamento</SelectItem>
+                      <SelectItem value="em_documentacao">Em Documentação</SelectItem>
+                      <SelectItem value="dp">DP</SelectItem>
+                      <SelectItem value="em_mobilizacao">Em Mobilização</SelectItem>
+                      <SelectItem value="cancelada">Cancelada</SelectItem>
                       <SelectItem value="closed">Fechada</SelectItem>
+                      <SelectItem value="expired">Expirada</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

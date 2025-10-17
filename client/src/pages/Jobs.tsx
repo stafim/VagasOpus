@@ -29,7 +29,10 @@ import {
   Trash2,
   Briefcase,
   Plus,
-  LayoutDashboard
+  LayoutDashboard,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown
 } from "lucide-react";
 import {
   Table,
@@ -89,6 +92,8 @@ export default function Jobs() {
   const [professionFilter, setProfessionFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(0);
   const pageSize = 20;
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -181,6 +186,75 @@ export default function Jobs() {
   const statusVariants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
     closed: "destructive"
   };
+
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortedJobs = () => {
+    if (!jobs || !sortColumn) return jobs;
+
+    const sorted = [...jobs].sort((a: any, b: any) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortColumn) {
+        case 'jobCode':
+          aValue = a.jobCode || '';
+          bValue = b.jobCode || '';
+          break;
+        case 'profession':
+          aValue = a.profession?.name || a.title || '';
+          bValue = b.profession?.name || b.title || '';
+          break;
+        case 'company':
+          aValue = a.company?.name || '';
+          bValue = b.company?.name || '';
+          break;
+        case 'status':
+          aValue = a.status || '';
+          bValue = b.status || '';
+          break;
+        case 'applicationsCount':
+          aValue = a.applicationsCount || 0;
+          bValue = b.applicationsCount || 0;
+          break;
+        case 'salary':
+          aValue = parseFloat(a.salaryMin || '0');
+          bValue = parseFloat(b.salaryMin || '0');
+          break;
+        case 'sla':
+          aValue = a.slaDeadline ? calculateSLA(a.createdAt, a.slaDeadline).percentage : 0;
+          bValue = b.slaDeadline ? calculateSLA(b.createdAt, b.slaDeadline).percentage : 0;
+          break;
+        case 'createdAt':
+          aValue = new Date(a.createdAt).getTime();
+          bValue = new Date(b.createdAt).getTime();
+          break;
+        default:
+          return 0;
+      }
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortDirection === 'asc' 
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      } else {
+        return sortDirection === 'asc' 
+          ? aValue - bValue
+          : bValue - aValue;
+      }
+    });
+
+    return sorted;
+  };
+
+  const sortedJobs = getSortedJobs();
 
   const formatSalary = (min?: string, max?: string) => {
     if (!min && !max) return "Não informado";
@@ -343,20 +417,116 @@ export default function Jobs() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>ID Vaga</TableHead>
-                    <TableHead>Profissão</TableHead>
-                    <TableHead>Empresa</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Candidatos</TableHead>
-                    <TableHead>Salário</TableHead>
-                    <TableHead>SLA (14 dias)</TableHead>
-                    <TableHead>Criado em</TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort('jobCode')}
+                    >
+                      <div className="flex items-center gap-1">
+                        ID Vaga
+                        {sortColumn === 'jobCode' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                        ) : (
+                          <ArrowUpDown className="h-4 w-4 opacity-50" />
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort('profession')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Profissão
+                        {sortColumn === 'profession' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                        ) : (
+                          <ArrowUpDown className="h-4 w-4 opacity-50" />
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort('company')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Empresa
+                        {sortColumn === 'company' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                        ) : (
+                          <ArrowUpDown className="h-4 w-4 opacity-50" />
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort('status')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Status
+                        {sortColumn === 'status' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                        ) : (
+                          <ArrowUpDown className="h-4 w-4 opacity-50" />
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort('applicationsCount')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Candidatos
+                        {sortColumn === 'applicationsCount' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                        ) : (
+                          <ArrowUpDown className="h-4 w-4 opacity-50" />
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort('salary')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Salário
+                        {sortColumn === 'salary' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                        ) : (
+                          <ArrowUpDown className="h-4 w-4 opacity-50" />
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort('sla')}
+                    >
+                      <div className="flex items-center gap-1">
+                        SLA (14 dias)
+                        {sortColumn === 'sla' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                        ) : (
+                          <ArrowUpDown className="h-4 w-4 opacity-50" />
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort('createdAt')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Criado em
+                        {sortColumn === 'createdAt' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                        ) : (
+                          <ArrowUpDown className="h-4 w-4 opacity-50" />
+                        )}
+                      </div>
+                    </TableHead>
                     <TableHead>Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {jobs && jobs.length > 0 ? (
-                    jobs.map((job: any) => (
+                  {sortedJobs && sortedJobs.length > 0 ? (
+                    sortedJobs.map((job: any) => (
                       <TableRow key={job.id} data-testid={`row-job-${job.id}`}>
                         <TableCell>
                           <div className="font-bold text-primary" data-testid={`text-job-code-${job.id}`}>

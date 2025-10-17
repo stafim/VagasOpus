@@ -30,12 +30,13 @@ export default function JobDetailsModal({ isOpen, onClose, jobId }: JobDetailsMo
     mutationFn: async (notes: string) => {
       await apiRequest("PATCH", `/api/jobs/${jobId}/notes`, { notes });
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast({
         title: "Nota salva",
         description: "A nota foi salva com sucesso",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/jobs", jobId] });
+      // Force refetch of the job data
+      await queryClient.refetchQueries({ queryKey: ["/api/jobs", jobId] });
       setIsEditingNotes(false);
     },
     onError: (error) => {

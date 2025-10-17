@@ -658,6 +658,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Prevent changing companyId via update (security measure)
       delete validatedData.companyId;
       
+      // If AUTH_BYPASS is enabled, don't include recruiterId if it's the demo user
+      const authBypass = process.env.AUTH_BYPASS === 'true';
+      if (authBypass && validatedData.recruiterId === 'demo-user-bypass') {
+        delete validatedData.recruiterId;
+      }
+      
       const job = await storage.updateJob(id, validatedData);
       res.json(job);
     } catch (error) {

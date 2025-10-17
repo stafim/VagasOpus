@@ -181,7 +181,7 @@ export default function Dashboard() {
   const formatSalary = (min?: string, max?: string) => {
     if (!min && !max) return "Não informado";
     if (!min) return `Até R$ ${parseFloat(max!).toLocaleString()}`;
-    if (!max) return `A partir de R$ ${parseFloat(min).toLocaleString()}`;
+    if (!max) return `R$ ${parseFloat(min).toLocaleString()}`;
     return `R$ ${parseFloat(min).toLocaleString()} - ${parseFloat(max).toLocaleString()}`;
   };
 

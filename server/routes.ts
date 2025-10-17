@@ -529,17 +529,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const slaDeadline = new Date();
       slaDeadline.setDate(slaDeadline.getDate() + 14);
       
-      // Convert date strings to Date objects
-      const dataToValidate = {
+      const validatedData = insertJobSchema.parse({
         ...req.body,
         createdBy: userId,
-        slaDeadline,
-        openingDate: req.body.openingDate ? new Date(req.body.openingDate) : undefined,
-        startDate: req.body.startDate ? new Date(req.body.startDate) : undefined,
-        expiresAt: req.body.expiresAt ? new Date(req.body.expiresAt) : undefined,
-      };
-      
-      const validatedData = insertJobSchema.parse(dataToValidate);
+        slaDeadline: slaDeadline.toISOString(),
+      });
       
       // Validate profession exists and is active  
       const profession = await storage.getProfession(validatedData.professionId);
@@ -586,16 +580,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Insufficient permissions" });
       }
       
-      // Convert date strings to Date objects
-      const dataToValidate = {
-        ...req.body,
-        openingDate: req.body.openingDate ? new Date(req.body.openingDate) : undefined,
-        startDate: req.body.startDate ? new Date(req.body.startDate) : undefined,
-        expiresAt: req.body.expiresAt ? new Date(req.body.expiresAt) : undefined,
-        slaDeadline: req.body.slaDeadline ? new Date(req.body.slaDeadline) : undefined,
-      };
-      
-      const validatedData = insertJobSchema.partial().parse(dataToValidate);
+      const validatedData = insertJobSchema.partial().parse(req.body);
       
       // Validate profession exists and is active if being updated
       if (validatedData.professionId) {

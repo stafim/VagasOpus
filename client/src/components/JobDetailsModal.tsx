@@ -274,13 +274,17 @@ export default function JobDetailsModal({ isOpen, onClose, jobId }: JobDetailsMo
                     </Button>
                   </div>
                 </div>
-              ) : job?.notes && (
-                <div className="mt-4 p-3 bg-muted/50 rounded-lg">
-                  <div className="flex items-start gap-2">
+              ) : (
+                <div className="mt-4">
+                  <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-lg">
                     <StickyNote className="h-4 w-4 text-muted-foreground mt-0.5" />
                     <div className="flex-1">
-                      <p className="text-sm font-medium mb-1">Nota:</p>
-                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">{job.notes}</p>
+                      <p className="text-sm font-medium mb-1">Notas:</p>
+                      {job?.notes ? (
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{job.notes}</p>
+                      ) : (
+                        <p className="text-sm text-muted-foreground italic">Nenhuma nota adicionada ainda</p>
+                      )}
                     </div>
                   </div>
                 </div>

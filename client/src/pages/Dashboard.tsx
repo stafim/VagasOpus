@@ -212,7 +212,7 @@ export default function Dashboard() {
                 <div className="w-2 h-2 bg-chart-2 rounded-full"></div>
                 Vagas Criadas no Mês
               </CardTitle>
-              <CardDescription>Evolução mensal de criação de vagas</CardDescription>
+              <CardDescription>Soma acumulada de vagas criadas</CardDescription>
             </CardHeader>
             <CardContent>
               {openJobsByMonthLoading ? (
@@ -220,10 +220,17 @@ export default function Dashboard() {
               ) : (
                 <ResponsiveContainer width="100%" height={280}>
                   <BarChart
-                    data={openJobsByMonth?.map((item) => ({
-                      month: item.month,
-                      count: item.count
-                    })) || []}
+                    data={(() => {
+                      let cumulative = 0;
+                      return openJobsByMonth?.map((item) => {
+                        cumulative += item.count;
+                        return {
+                          month: item.month,
+                          count: item.count,
+                          total: cumulative
+                        };
+                      }) || [];
+                    })()}
                     margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
@@ -247,11 +254,23 @@ export default function Dashboard() {
                         borderRadius: '8px',
                         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                       }}
+                      formatter={(value: number, name: string) => {
+                        if (name === 'total') return [value, 'Total Acumulado'];
+                        if (name === 'count') return [value, 'Novas Vagas'];
+                        return [value, name];
+                      }}
                     />
                     <Bar 
                       dataKey="count" 
+                      fill="#10b981"
+                      radius={[8, 8, 0, 0]}
+                      name="Novas"
+                    />
+                    <Bar 
+                      dataKey="total" 
                       fill="#3b82f6"
                       radius={[8, 8, 0, 0]}
+                      name="Total"
                     />
                   </BarChart>
                 </ResponsiveContainer>

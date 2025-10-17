@@ -6,6 +6,17 @@ This is a job management system (VagasPro) built with React and Express, designe
 
 # Recent Changes (October 17, 2025)
 
+## Dashboard - Numbered Job Status Display
+- **Added**: Numerical prefixes to job status labels in Dashboard
+- **Status Order**:
+  1. Abertas (aberto)
+  2. Aprovadas (aprovada)
+  3. Em Recrutamento (em_recrutamento)
+  4. Em Documentação (em_documentacao)
+  5. DP (dp)
+  6. Fechadas (closed)
+- **Visual**: Numbers appear in pie chart labels and legends for better organization
+
 ## Job Closure Report - Monthly Filter
 - **Added**: Monthly filter to Job Closure Report
 - **Features**:

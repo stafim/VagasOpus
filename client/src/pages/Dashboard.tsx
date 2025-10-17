@@ -57,15 +57,17 @@ const statusColors: Record<string, string> = {
   aprovada: '#3B82F6',    // Azul médio
   em_recrutamento: '#60A5FA', // Azul sky
   em_documentacao: '#2563EB', // Azul royal
+  dp: '#1E40AF',          // Azul escuro
   closed: '#10b981'       // Verde
 };
 
 const statusLabels: Record<string, string> = {
-  closed: "Fechada",
-  aberto: "Aberto",
-  aprovada: "Aprovada",
-  em_recrutamento: "Em Recrutamento",
-  em_documentacao: "Em Documentação"
+  aberto: "1. Abertas",
+  aprovada: "2. Aprovadas",
+  em_recrutamento: "3. Em Recrutamento",
+  em_documentacao: "4. Em Documentação",
+  dp: "5. DP",
+  closed: "6. Fechadas"
 };
 
 export default function Dashboard() {

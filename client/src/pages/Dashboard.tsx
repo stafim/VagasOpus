@@ -6,7 +6,8 @@ import type {
   JobsListResponse,
   OpenJobsByMonthResponse,
   JobsByCreatorResponse,
-  JobsByCompanyResponse
+  JobsByCompanyResponse,
+  JobsSLAResponse
 } from "@shared/schema";
 import { useState } from "react";
 import Layout from "@/components/Layout";
@@ -92,6 +93,10 @@ export default function Dashboard() {
 
   const { data: jobsByCompany, isLoading: jobsByCompanyLoading } = useQuery<JobsByCompanyResponse>({
     queryKey: ["/api/dashboard/jobs-by-company"],
+  });
+
+  const { data: jobsSLA, isLoading: jobsSLALoading } = useQuery<JobsSLAResponse>({
+    queryKey: ["/api/dashboard/jobs-sla"],
   });
 
   const { data: jobs, isLoading: jobsLoading } = useQuery<JobsListResponse>({
@@ -210,30 +215,30 @@ export default function Dashboard() {
             <CardHeader className="pb-3">
               <CardTitle className="text-lg font-semibold flex items-center gap-2">
                 <div className="w-2 h-2 bg-chart-2 rounded-full"></div>
-                Vagas Criadas no Mês
+                Vagas e SLA
               </CardTitle>
-              <CardDescription>Soma acumulada de vagas criadas</CardDescription>
+              <CardDescription>Distribuição de vagas dentro e fora do prazo</CardDescription>
             </CardHeader>
             <CardContent>
-              {openJobsByMonthLoading ? (
+              {jobsSLALoading ? (
                 <Skeleton className="h-64 w-full" />
               ) : (
                 <div className="flex items-center justify-around h-64">
                   <div className="text-center">
                     <div className="text-6xl font-bold text-green-600 mb-2">
-                      {openJobsByMonth?.[openJobsByMonth.length - 1]?.count || 0}
+                      {jobsSLA?.withinSLA || 0}
                     </div>
                     <div className="text-sm text-muted-foreground font-medium">
-                      Novas Vagas Este Mês
+                      Dentro do SLA
                     </div>
                   </div>
                   <div className="h-32 w-px bg-border"></div>
                   <div className="text-center">
-                    <div className="text-6xl font-bold text-blue-600 mb-2">
-                      {openJobsByMonth?.reduce((acc, item) => acc + item.count, 0) || 0}
+                    <div className="text-6xl font-bold text-red-600 mb-2">
+                      {jobsSLA?.outsideSLA || 0}
                     </div>
                     <div className="text-sm text-muted-foreground font-medium">
-                      Total Acumulado
+                      Fora do SLA
                     </div>
                   </div>
                 </div>

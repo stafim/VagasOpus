@@ -110,6 +110,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/dashboard/jobs-sla', isAuthenticated, async (req, res) => {
+    try {
+      const data = await storage.getJobsSLA();
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching jobs SLA:", error);
+      res.status(500).json({ message: "Failed to fetch jobs SLA" });
+    }
+  });
+
   app.get('/api/reports/job-closure', isAuthenticated, async (req, res) => {
     try {
       const report = await storage.getJobClosureReport();

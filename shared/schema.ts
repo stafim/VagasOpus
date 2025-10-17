@@ -793,3 +793,8 @@ export type JobsByCompanyResponse = Array<{
   companyName: string; 
   count: number 
 }>;
+
+export type JobsSLAResponse = {
+  withinSLA: number;
+  outsideSLA: number;
+};

@@ -173,6 +173,7 @@ export interface IStorage {
   getOpenJobsByMonth(): Promise<Array<{ month: string; count: number }>>;
   getJobsByCreator(): Promise<Array<{ creatorId: string; creatorName: string; count: number }>>;
   getJobsByCompany(): Promise<Array<{ companyId: string; companyName: string; count: number }>>;
+  getJobsSLA(): Promise<{ withinSLA: number; outsideSLA: number }>;
   
   // Selection process analytics
   getSelectionProcessMetrics(companyId?: string, timeframe?: string): Promise<SelectionProcessMetrics>;
@@ -1205,6 +1206,33 @@ export class DatabaseStorage implements IStorage {
       companyName: row.companyName || 'Sem empresa',
       count: row.count
     }));
+  }
+
+  async getJobsSLA(): Promise<{ withinSLA: number; outsideSLA: number }> {
+    const now = new Date();
+    
+    const allJobs = await db
+      .select({
+        slaDeadline: jobs.slaDeadline,
+      })
+      .from(jobs)
+      .where(sql`${jobs.slaDeadline} IS NOT NULL`);
+    
+    let withinSLA = 0;
+    let outsideSLA = 0;
+    
+    allJobs.forEach(job => {
+      if (job.slaDeadline) {
+        const deadline = new Date(job.slaDeadline);
+        if (now <= deadline) {
+          withinSLA++;
+        } else {
+          outsideSLA++;
+        }
+      }
+    });
+    
+    return { withinSLA, outsideSLA };
   }
 
   // Selection process analytics

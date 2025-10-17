@@ -6,6 +6,15 @@ This is a job management system (VagasPro) built with React and Express, designe
 
 # Recent Changes (October 17, 2025)
 
+## Dashboard - Vagas em Recrutamento por Usuário Chart
+- **Modified**: Changed "Vagas por Criador" chart to show only jobs in recruitment status
+- **Changes**:
+  - Chart title updated to "Vagas em Recrutamento por Usuário"
+  - Chart description updated to "Top 5 usuários com mais vagas em recrutamento"
+  - Backend query filters jobs with `status = 'em_recrutamento'` only
+  - Applied to both regular and monthly filtered views
+- **Technical**: Modified `getJobsByCreator()` in storage.ts to add WHERE clause filtering by status
+
 ## Kanban Job Filter Fix
 - **Fixed**: Kanban now correctly opens with the selected job from the Jobs page
 - **Issue**: Previously, clicking the Kanban button on a specific job (e.g., VG008) would open the Kanban with a different job

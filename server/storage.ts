@@ -1204,20 +1204,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getJobsByCreator(month?: string): Promise<Array<{ creatorId: string; creatorName: string; count: number }>> {
-    let query = db
+    const conditions = [eq(jobs.status, 'em_recrutamento')];
+    
+    if (month) {
+      conditions.push(sql`strftime('%Y-%m', ${jobs.createdAt}) = ${month}`);
+    }
+    
+    const result = await db
       .select({
         creatorId: jobs.createdBy,
         creatorName: sql<string>`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
         count: count(),
       })
       .from(jobs)
-      .leftJoin(users, eq(jobs.createdBy, users.id));
-    
-    if (month) {
-      query = query.where(sql`strftime('%Y-%m', ${jobs.createdAt}) = ${month}`);
-    }
-    
-    const result = await query
+      .leftJoin(users, eq(jobs.createdBy, users.id))
+      .where(and(...conditions))
       .groupBy(jobs.createdBy, users.firstName, users.lastName, users.email)
       .orderBy(desc(count()));
     

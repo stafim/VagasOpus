@@ -348,9 +348,9 @@ export default function Dashboard() {
             <CardHeader className="pb-3">
               <CardTitle className="text-lg font-semibold flex items-center gap-2">
                 <div className="w-2 h-2 bg-chart-3 rounded-full"></div>
-                Vagas por Criador
+                Vagas em Recrutamento por Usuário
               </CardTitle>
-              <CardDescription>Top 5 criadores de vagas</CardDescription>
+              <CardDescription>Top 5 usuários com mais vagas em recrutamento</CardDescription>
             </CardHeader>
             <CardContent>
               {jobsByCreatorLoading ? (

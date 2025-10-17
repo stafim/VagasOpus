@@ -30,8 +30,8 @@ import {
   PieChart,
   Pie,
   Cell,
-  LineChart,
-  Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -210,16 +210,16 @@ export default function Dashboard() {
             <CardHeader className="pb-3">
               <CardTitle className="text-lg font-semibold flex items-center gap-2">
                 <div className="w-2 h-2 bg-chart-2 rounded-full"></div>
-                Total de Vagas Abertas
+                Vagas Criadas no Mês
               </CardTitle>
-              <CardDescription>Evolução mensal de abertura de vagas</CardDescription>
+              <CardDescription>Evolução mensal de criação de vagas</CardDescription>
             </CardHeader>
             <CardContent>
               {openJobsByMonthLoading ? (
                 <Skeleton className="h-64 w-full" />
               ) : (
                 <ResponsiveContainer width="100%" height={280}>
-                  <LineChart
+                  <BarChart
                     data={openJobsByMonth?.map((item) => ({
                       month: item.month,
                       count: item.count
@@ -248,15 +248,12 @@ export default function Dashboard() {
                         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                       }}
                     />
-                    <Line 
-                      type="monotone" 
+                    <Bar 
                       dataKey="count" 
-                      stroke="#3b82f6" 
-                      strokeWidth={3}
-                      dot={{ fill: '#3b82f6', strokeWidth: 2, r: 5 }}
-                      activeDot={{ r: 7, stroke: '#3b82f6', strokeWidth: 2, fill: 'hsl(var(--background))' }}
+                      fill="#3b82f6"
+                      radius={[8, 8, 0, 0]}
                     />
-                  </LineChart>
+                  </BarChart>
                 </ResponsiveContainer>
               )}
             </CardContent>

@@ -60,7 +60,7 @@ const jobFormSchema = z.object({
   location: z.string().optional().default(""),
   contractType: z.enum(["clt", "pj", "freelancer", "estagio", "temporario"]).default("clt"),
   jobType: z.enum(["produtiva", "improdutiva"]).optional(),
-  status: z.enum(["draft", "active", "closed", "expired", "aberto", "aprovada", "em_recrutamento", "em_documentacao", "dp", "em_mobilizacao", "cancelada"]).default("draft"),
+  status: z.enum(["active", "closed", "expired", "aberto", "aprovada", "em_recrutamento", "em_documentacao", "dp", "em_mobilizacao", "cancelada"]).default("aberto"),
   
   // Novos campos detalhados
   openingDate: z.string().optional(),
@@ -138,7 +138,7 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
       department: "",
       location: "",
       contractType: "clt",
-      status: "draft",
+      status: "aberto",
       vacancyQuantity: "1",
       gender: "indiferente",
       unhealthinessLevel: "nao",
@@ -164,7 +164,7 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
         recruiterId: jobData.recruiterId || "",
         contractType: jobData.contractType || "clt",
         jobType: jobData.jobType || undefined,
-        status: jobData.status || "draft",
+        status: jobData.status || "aberto",
         salaryMin: jobData.salaryMin || "",
         openingDate: jobData.openingDate ? new Date(jobData.openingDate).toISOString().split('T')[0] : undefined,
         startDate: jobData.startDate ? new Date(jobData.startDate).toISOString().split('T')[0] : undefined,
@@ -1075,37 +1075,45 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
 
             <Separator />
 
-            {/* Status */}
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger data-testid="select-status">
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="draft">Rascunho</SelectItem>
-                      <SelectItem value="active">Ativa</SelectItem>
-                      <SelectItem value="aberto">Aberto</SelectItem>
-                      <SelectItem value="aprovada">Aprovada</SelectItem>
-                      <SelectItem value="em_recrutamento">Em Recrutamento</SelectItem>
-                      <SelectItem value="em_documentacao">Em Documentação</SelectItem>
-                      <SelectItem value="dp">DP</SelectItem>
-                      <SelectItem value="em_mobilizacao">Em Mobilização</SelectItem>
-                      <SelectItem value="cancelada">Cancelada</SelectItem>
-                      <SelectItem value="closed">Fechada</SelectItem>
-                      <SelectItem value="expired">Expirada</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Status - Apenas visível ao editar vaga */}
+            {isEditing && (
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-status">
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="aberto">Aberto</SelectItem>
+                        <SelectItem value="active">Ativa</SelectItem>
+                        <SelectItem value="aprovada">Aprovada</SelectItem>
+                        <SelectItem value="em_recrutamento">Em Recrutamento</SelectItem>
+                        <SelectItem value="em_documentacao">Em Documentação</SelectItem>
+                        <SelectItem value="dp">DP</SelectItem>
+                        <SelectItem value="em_mobilizacao">Em Mobilização</SelectItem>
+                        <SelectItem value="cancelada">Cancelada</SelectItem>
+                        <SelectItem value="closed">Fechada</SelectItem>
+                        <SelectItem value="expired">Expirada</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {/* Mensagem informativa quando criar nova vaga */}
+            {!isEditing && (
+              <div className="text-sm text-muted-foreground bg-blue-50 dark:bg-blue-950 p-3 rounded-md border border-blue-200 dark:border-blue-800">
+                ℹ️ Ao criar uma vaga, o status será automaticamente definido como <strong>ABERTO</strong>
+              </div>
+            )}
 
             <div className="flex items-center justify-end space-x-4 pt-4">
               <Button type="button" variant="outline" onClick={handleClose} data-testid="button-cancel">

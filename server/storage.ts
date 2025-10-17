@@ -172,6 +172,7 @@ export interface IStorage {
   getApplicationsByMonth(): Promise<Array<{ month: string; count: number }>>;
   getOpenJobsByMonth(): Promise<Array<{ month: string; count: number }>>;
   getJobsByCreator(month?: string): Promise<Array<{ creatorId: string; creatorName: string; count: number }>>;
+  getAllJobsByCreator(month?: string): Promise<Array<{ creatorId: string; creatorName: string; count: number }>>;
   getJobsByCompany(month?: string): Promise<Array<{ companyId: string; companyName: string; count: number }>>;
   getJobsSLA(month?: string): Promise<{ withinSLA: number; outsideSLA: number }>;
   getJobsStatusSummary(month?: string): Promise<Array<{ status: string; count: number }>>;
@@ -1220,6 +1221,32 @@ export class DatabaseStorage implements IStorage {
       .from(jobs)
       .leftJoin(users, eq(jobs.createdBy, users.id))
       .where(and(...conditions))
+      .groupBy(jobs.createdBy, users.firstName, users.lastName, users.email)
+      .orderBy(desc(count()));
+    
+    return result.map(row => ({
+      creatorId: row.creatorId || '',
+      creatorName: row.creatorName || 'Sem criador',
+      count: row.count
+    }));
+  }
+
+  async getAllJobsByCreator(month?: string): Promise<Array<{ creatorId: string; creatorName: string; count: number }>> {
+    const conditions = [];
+    
+    if (month) {
+      conditions.push(sql`strftime('%Y-%m', ${jobs.createdAt}) = ${month}`);
+    }
+    
+    const result = await db
+      .select({
+        creatorId: jobs.createdBy,
+        creatorName: sql<string>`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
+        count: count(),
+      })
+      .from(jobs)
+      .leftJoin(users, eq(jobs.createdBy, users.id))
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
       .groupBy(jobs.createdBy, users.firstName, users.lastName, users.email)
       .orderBy(desc(count()));
     

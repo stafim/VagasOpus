@@ -6,6 +6,18 @@ This is a job management system (VagasPro) built with React and Express, designe
 
 # Recent Changes (October 17, 2025)
 
+## Dashboard - Vagas por Solicitante (Gestor)
+- **Created**: Nova seção mostrando quantidade de vagas por gestor solicitante
+- **Features**:
+  - Gráfico de barras horizontal com top 10 gestores criadores de vagas
+  - Contagem total de vagas criadas por cada gestor (todos os status)
+  - Filtro por mês integrado ao sistema
+- **Backend**: 
+  - Novo método `getAllJobsByCreator()` em storage.ts
+  - Nova rota `/api/dashboard/all-jobs-by-creator`
+  - Query SQL que busca todas as vagas agrupadas por criador sem filtro de status
+- **Visual**: Barras azuis (#3B82F6) com tooltip mostrando detalhes
+
 ## Kanban - Botão de Notas nos Cards de Candidatos
 - **Enhanced**: Melhorado o botão de visualização/edição de notas nos cards de candidatos
 - **Features**:

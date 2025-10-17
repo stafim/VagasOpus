@@ -103,6 +103,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/dashboard/all-jobs-by-creator', isAuthenticated, async (req, res) => {
+    try {
+      const month = req.query.month as string | undefined;
+      const data = await storage.getAllJobsByCreator(month);
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching all jobs by creator:", error);
+      res.status(500).json({ message: "Failed to fetch all jobs by creator" });
+    }
+  });
+
   app.get('/api/dashboard/jobs-by-company', isAuthenticated, async (req, res) => {
     try {
       const month = req.query.month as string | undefined;

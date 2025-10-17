@@ -156,6 +156,17 @@ export default function Dashboard() {
     }
   });
 
+  const { data: allJobsByCreator, isLoading: allJobsByCreatorLoading } = useQuery<JobsByCreatorResponse>({
+    queryKey: ["/api/dashboard/all-jobs-by-creator", selectedMonth],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (selectedMonth !== "all") params.append("month", selectedMonth);
+      const res = await fetch(`/api/dashboard/all-jobs-by-creator?${params}`, { credentials: "include" });
+      if (!res.ok) throw new Error('Failed to fetch all jobs by creator');
+      return await res.json();
+    }
+  });
+
   const { data: jobs, isLoading: jobsLoading } = useQuery<JobsListResponse>({
     queryKey: ["/api/jobs", search],
     queryFn: async () => {
@@ -425,6 +436,45 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Vagas por Solicitante */}
+        <Card className="shadow-sm hover:shadow-lg transition-shadow duration-200">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <div className="w-2 h-2 bg-primary rounded-full"></div>
+              Vagas por Solicitante (Gestor)
+            </CardTitle>
+            <CardDescription>Quantidade de vagas criadas por cada gestor solicitante</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {allJobsByCreatorLoading ? (
+              <Skeleton className="h-80 w-full" />
+            ) : (
+              <ResponsiveContainer width="100%" height={320}>
+                <BarChart 
+                  data={allJobsByCreator?.slice(0, 10).map((item) => ({
+                    name: item.creatorName,
+                    value: item.count
+                  })) || []} 
+                  layout="horizontal"
+                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                >
+                  <XAxis type="number" />
+                  <YAxis dataKey="name" type="category" width={150} />
+                  <Tooltip 
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--popover))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                    }}
+                  />
+                  <Bar dataKey="value" fill="#3B82F6" radius={[0, 8, 8, 0]} barSize={25} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Recent Jobs Table */}
         <Card className="shadow-sm hover:shadow-lg transition-shadow duration-200">

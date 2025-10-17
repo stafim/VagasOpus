@@ -547,6 +547,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("Validated data:", JSON.stringify(validatedData, null, 2));
       
+      // Convert ISO strings to Date objects for Drizzle timestamp columns
+      const jobDataForDb: any = { ...validatedData };
+      if (jobDataForDb.openingDate) jobDataForDb.openingDate = new Date(jobDataForDb.openingDate);
+      if (jobDataForDb.startDate) jobDataForDb.startDate = new Date(jobDataForDb.startDate);
+      if (jobDataForDb.expiresAt) jobDataForDb.expiresAt = new Date(jobDataForDb.expiresAt);
+      if (jobDataForDb.slaDeadline) jobDataForDb.slaDeadline = new Date(jobDataForDb.slaDeadline);
+      
+      console.log("Data for DB (with Date objects):", jobDataForDb);
+      
       // Validate profession exists and is active  
       const profession = await storage.getProfession(validatedData.professionId);
       if (!profession || !profession.isActive) {
@@ -564,7 +573,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Insufficient permissions" });
       }
       
-      const job = await storage.createJob(validatedData);
+      const job = await storage.createJob(jobDataForDb);
       res.status(201).json(job);
     } catch (error) {
       console.error("Error creating job:", error);

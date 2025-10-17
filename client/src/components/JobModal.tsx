@@ -53,7 +53,7 @@ import { cn } from "@/lib/utils";
 const jobFormSchema = z.object({
   professionId: z.string().min(1, "Profissão é obrigatória"),
   description: z.string().optional().default(""),
-  companyId: z.string().optional(),
+  companyId: z.string().min(1, "Empresa é obrigatória"),
   costCenterId: z.string().optional(),
   recruiterId: z.string().optional(),
   department: z.string().optional().default(""),

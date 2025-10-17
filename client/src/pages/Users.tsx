@@ -34,6 +34,7 @@ const roleColors: Record<string, string> = {
 const userFormSchema = z.object({
   name: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
   email: z.string().email("E-mail inválido"),
+  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
   role: z.string().min(1, "Selecione um tipo de permissão")
 });
 
@@ -48,6 +49,7 @@ export default function Users() {
     defaultValues: {
       name: "",
       email: "",
+      password: "",
       role: "user"
     }
   });
@@ -149,6 +151,25 @@ export default function Users() {
                           type="email"
                           placeholder="usuario@exemplo.com"
                           data-testid="input-email"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Senha</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="password"
+                          placeholder="Mínimo 6 caracteres"
+                          data-testid="input-password"
                         />
                       </FormControl>
                       <FormMessage />

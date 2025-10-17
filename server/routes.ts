@@ -133,13 +133,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Email already in use" });
       }
       
-      // Create user with default password hash (should be changed on first login)
+      // Validate password is provided
+      if (!userData.password || userData.password.length < 6) {
+        return res.status(400).json({ message: "Senha deve ter pelo menos 6 caracteres" });
+      }
+      
+      // Hash the provided password
       const bcrypt = await import('bcrypt');
-      const defaultPasswordHash = await bcrypt.hash('changeme123', 10);
+      const passwordHash = await bcrypt.hash(userData.password, 10);
       
       const newUser = await storage.createUser({
         email: userData.email,
-        passwordHash: defaultPasswordHash,
+        passwordHash: passwordHash,
         firstName: userData.name,
         lastName: userData.name, // Using name for both first and last
         role: userData.role || 'user'

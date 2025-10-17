@@ -539,11 +539,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("Cleaned body:", JSON.stringify(cleanedBody, null, 2));
       
-      const validatedData = insertJobSchema.parse({
+      // Don't set createdBy in AUTH_BYPASS mode since the user doesn't exist in DB
+      const dataToValidate: any = {
         ...cleanedBody,
-        createdBy: userId,
         slaDeadline: slaDeadline.toISOString(),
-      });
+      };
+      
+      // Only set createdBy if not in bypass mode and user exists
+      if (process.env.AUTH_BYPASS !== 'true') {
+        dataToValidate.createdBy = userId;
+      }
+      
+      const validatedData = insertJobSchema.parse(dataToValidate);
       
       console.log("Validated data:", JSON.stringify(validatedData, null, 2));
       

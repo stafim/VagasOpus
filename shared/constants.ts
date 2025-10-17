@@ -1,10 +1,5 @@
 // Job status configuration
 export const JOB_STATUS_CONFIG = {
-  draft: {
-    label: "Rascunho",
-    variant: "secondary" as const,
-    description: "Vaga em preparação, ainda não publicada"
-  },
   active: {
     label: "Ativa",
     variant: "default" as const,

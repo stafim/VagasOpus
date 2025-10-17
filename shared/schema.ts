@@ -85,7 +85,6 @@ export const clients = pgTable("clients", {
 
 // Job status enum
 export const jobStatusEnum = pgEnum("job_status", [
-  "draft",
   "active", 
   "closed",
   "expired",

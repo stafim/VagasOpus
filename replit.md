@@ -18,13 +18,13 @@ This is a job management system (VagasPro) built with React and Express, designe
 - **API Routes**: `/api/reports/job-closure?month=YYYY-MM` and `/api/reports/closed-jobs-by-recruiter?month=YYYY-MM`
 
 ## Modern Login Screen Implementation
-- **Created**: Beautiful, modern login/registration interface with glassmorphism design
+- **Created**: Beautiful, modern login interface with glassmorphism design
 - **Features**: 
   - Gradient background (blue → indigo → purple) with decorative blur elements
   - Two-column layout on desktop: branding information + login form
   - Responsive mobile design with optimized single-column layout
-  - Toggle between Login and Registration forms
-  - Icon-enhanced input fields (Mail, Lock, User icons)
+  - Login-only interface (registration removed)
+  - Icon-enhanced input fields (Mail, Lock icons)
   - Form validation with real-time error messages
   - Loading states with animated spinners
   - Gradient buttons with smooth hover effects
@@ -32,6 +32,7 @@ This is a job management system (VagasPro) built with React and Express, designe
   - Main login at `/` (when not authenticated)
   - Demo preview at `/login-demo` (accessible anytime)
 - **Integration**: Fully integrated with existing authentication system (simpleAuth.ts)
+- **Note**: Registration functionality removed - login only
 
 ## Job Status Updates
 - **Added new statuses**: "dp", "em_mobilizacao", "cancelada"

@@ -6,6 +6,17 @@ This is a job management system (VagasPro) built with React and Express, designe
 
 # Recent Changes (October 17, 2025)
 
+## Job Closure Report - Monthly Filter
+- **Added**: Monthly filter to Job Closure Report
+- **Features**:
+  - Dropdown selector with last 12 months in Portuguese format
+  - "Todos os meses" option to show all data
+  - Clear filter button when a month is selected
+  - Real-time filtering of both ranking table and detailed jobs table
+  - All metrics cards update automatically based on selected month
+- **Backend**: SQL queries filter by `TO_CHAR(j.updated_at, 'YYYY-MM')` when month parameter is provided
+- **API Routes**: `/api/reports/job-closure?month=YYYY-MM` and `/api/reports/closed-jobs-by-recruiter?month=YYYY-MM`
+
 ## Modern Login Screen Implementation
 - **Created**: Beautiful, modern login/registration interface with glassmorphism design
 - **Features**: 

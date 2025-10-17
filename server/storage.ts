@@ -164,6 +164,7 @@ export interface IStorage {
   getDashboardMetrics(month?: string): Promise<{
     totalJobs: number;
     activeJobs: number;
+    closedJobs: number;
     totalApplications: number;
     totalCompanies: number;
   }>;
@@ -1137,25 +1138,30 @@ export class DatabaseStorage implements IStorage {
   async getDashboardMetrics(month?: string): Promise<{
     totalJobs: number;
     activeJobs: number;
+    closedJobs: number;
     totalApplications: number;
     totalCompanies: number;
   }> {
     let totalJobsQuery = db.select({ count: count() }).from(jobs);
     let activeJobsQuery = db.select({ count: count() }).from(jobs).where(eq(jobs.status, "active"));
+    let closedJobsQuery = db.select({ count: count() }).from(jobs).where(eq(jobs.status, "closed"));
     
     if (month) {
       totalJobsQuery = totalJobsQuery.where(sql`strftime('%Y-%m', ${jobs.createdAt}) = ${month}`);
       activeJobsQuery = activeJobsQuery.where(sql`strftime('%Y-%m', ${jobs.createdAt}) = ${month}`);
+      closedJobsQuery = closedJobsQuery.where(sql`strftime('%Y-%m', ${jobs.createdAt}) = ${month}`);
     }
     
     const [totalJobsResult] = await totalJobsQuery;
     const [activeJobsResult] = await activeJobsQuery;
+    const [closedJobsResult] = await closedJobsQuery;
     const [totalApplicationsResult] = await db.select({ count: count() }).from(applications);
     const [totalCompaniesResult] = await db.select({ count: count() }).from(companies);
 
     return {
       totalJobs: totalJobsResult.count,
       activeJobs: activeJobsResult.count,
+      closedJobs: closedJobsResult.count,
       totalApplications: totalApplicationsResult.count,
       totalCompanies: totalCompaniesResult.count,
     };

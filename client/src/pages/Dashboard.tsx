@@ -42,15 +42,18 @@ import {
   Calendar
 } from "lucide-react";
 
-const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
+const statusColors: Record<string, string> = {
+  aberto: '#3b82f6',           // Azul
+  aprovada: '#10b981',          // Verde
+  em_recrutamento: '#f59e0b',   // Laranja
+  em_documentacao: '#8b5cf6',   // Roxo
+  closed: '#ef4444',            // Vermelho
+};
 
 const statusLabels: Record<string, string> = {
-  active: "Ativa",
-  draft: "Rascunho", 
-  paused: "Pausada",
   closed: "Fechada",
-  expired: "Expirada",
   aberto: "Aberto",
+  aprovada: "Aprovada",
   em_recrutamento: "Em Recrutamento",
   em_documentacao: "Em Documentação"
 };
@@ -76,12 +79,9 @@ export default function Dashboard() {
   });
 
   const statusVariants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-    active: "default",
-    draft: "secondary",
-    paused: "outline",
     closed: "destructive",
-    expired: "destructive",
     aberto: "default",
+    aprovada: "default",
     em_recrutamento: "outline",
     em_documentacao: "secondary"
   };
@@ -187,7 +187,7 @@ export default function Dashboard() {
                       stroke="hsl(var(--background))"
                     >
                       {jobsByStatus?.map((entry, index: number) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell key={`cell-${index}`} fill={statusColors[entry.status] || '#6b7280'} />
                       )) || []}
                     </Pie>
                     <Tooltip 

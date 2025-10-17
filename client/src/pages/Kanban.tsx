@@ -90,10 +90,6 @@ export default function Kanban() {
   const [notes, setNotes] = useState("");
   const [showNotesReport, setShowNotesReport] = useState(false);
 
-  // Parse jobId from URL query string
-  const urlParams = new URLSearchParams(location.split('?')[1] || '');
-  const jobIdFromUrl = urlParams.get('jobId');
-
   const { data: applications = [], isLoading } = useQuery<Application[]>({
     queryKey: ["/api/applications", selectedJobFilter],
     enabled: !!selectedJobFilter,
@@ -117,13 +113,17 @@ export default function Kanban() {
     queryKey: ["/api/jobs"],
   });
 
+  // Set job filter from URL or default to first job
   useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const jobIdFromUrl = urlParams.get('jobId');
+    
     if (jobIdFromUrl) {
       setSelectedJobFilter(jobIdFromUrl);
     } else if (jobs.length > 0 && !selectedJobFilter) {
       setSelectedJobFilter(jobs[0].id);
     }
-  }, [jobIdFromUrl, jobs]);
+  }, [location, jobs]);
 
   const form = useForm<CandidateFormData>({
     resolver: zodResolver(candidateFormSchema),
@@ -131,15 +131,16 @@ export default function Kanban() {
       candidateName: "",
       candidateEmail: "",
       candidatePhone: "",
-      jobId: jobIdFromUrl || "",
+      jobId: "",
     },
   });
 
+  // Update form jobId when selectedJobFilter changes
   useEffect(() => {
-    if (jobIdFromUrl) {
-      form.setValue("jobId", jobIdFromUrl);
+    if (selectedJobFilter) {
+      form.setValue("jobId", selectedJobFilter);
     }
-  }, [jobIdFromUrl, form]);
+  }, [selectedJobFilter, form]);
 
   const createCandidateMutation = useMutation({
     mutationFn: async (data: CandidateFormData) => {

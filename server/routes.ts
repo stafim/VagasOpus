@@ -596,8 +596,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Insufficient permissions" });
       }
       
-      const job = await storage.createJob(jobDataForDb);
-      res.status(201).json(job);
+      // If vacancyQuantity > 1, create multiple job records
+      const quantity = jobDataForDb.vacancyQuantity || 1;
+      
+      if (quantity > 1) {
+        const createdJobs = [];
+        
+        for (let i = 0; i < quantity; i++) {
+          // Create a copy of job data for each vacancy
+          const jobCopy = { ...jobDataForDb };
+          // Set vacancyQuantity to 1 for each individual job record
+          jobCopy.vacancyQuantity = 1;
+          
+          const job = await storage.createJob(jobCopy);
+          createdJobs.push(job);
+        }
+        
+        console.log(`Created ${quantity} job records`);
+        // Return the first job as response
+        res.status(201).json(createdJobs[0]);
+      } else {
+        const job = await storage.createJob(jobDataForDb);
+        res.status(201).json(job);
+      }
     } catch (error) {
       console.error("Error creating job:", error);
       res.status(400).json({ message: "Invalid job data" });

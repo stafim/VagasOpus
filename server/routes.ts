@@ -127,7 +127,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/reports/job-closure', isAuthenticated, async (req, res) => {
     try {
-      const report = await storage.getJobClosureReport();
+      const month = req.query.month as string | undefined;
+      const report = await storage.getJobClosureReport(month);
       res.json(report);
     } catch (error) {
       console.error("Error fetching job closure report:", error);
@@ -137,7 +138,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/reports/closed-jobs-by-recruiter', isAuthenticated, async (req, res) => {
     try {
-      const report = await storage.getClosedJobsByRecruiter();
+      const month = req.query.month as string | undefined;
+      const report = await storage.getClosedJobsByRecruiter(month);
       res.json(report);
     } catch (error) {
       console.error("Error fetching closed jobs by recruiter report:", error);

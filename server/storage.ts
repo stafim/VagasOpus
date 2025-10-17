@@ -1652,8 +1652,8 @@ export class DatabaseStorage implements IStorage {
     return userPermissions.includes(permission);
   }
 
-  async getJobClosureReport(): Promise<any[]> {
-    const queryResult = await db.execute(sql`
+  async getJobClosureReport(month?: string): Promise<any[]> {
+    let query = sql`
       SELECT 
         u.id as recruiter_id,
         u.first_name as recruiter_first_name,
@@ -1665,9 +1665,18 @@ export class DatabaseStorage implements IStorage {
       FROM jobs j
       INNER JOIN users u ON j.recruiter_id = u.id
       WHERE j.status = 'closed'
+    `;
+
+    if (month) {
+      query = sql`${query} AND TO_CHAR(j.updated_at, 'YYYY-MM') = ${month}`;
+    }
+
+    query = sql`${query}
       GROUP BY u.id, u.first_name, u.last_name, u.email
       ORDER BY COUNT(j.id) DESC
-    `);
+    `;
+
+    const queryResult = await db.execute(query);
 
     return queryResult.rows.map((row: any) => ({
       recruiterId: row.recruiter_id,
@@ -1681,8 +1690,8 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  async getClosedJobsByRecruiter(): Promise<any[]> {
-    const queryResult = await db.execute(sql`
+  async getClosedJobsByRecruiter(month?: string): Promise<any[]> {
+    let query = sql`
       SELECT 
         u.id as recruiter_id,
         COALESCE(CONCAT(u.first_name, ' ', u.last_name), u.email) as recruiter_name,
@@ -1700,8 +1709,17 @@ export class DatabaseStorage implements IStorage {
       LEFT JOIN professions p ON j.profession_id = p.id
       LEFT JOIN companies c ON j.company_id = c.id
       WHERE j.status = 'closed'
+    `;
+
+    if (month) {
+      query = sql`${query} AND TO_CHAR(j.updated_at, 'YYYY-MM') = ${month}`;
+    }
+
+    query = sql`${query}
       ORDER BY j.updated_at DESC
-    `);
+    `;
+
+    const queryResult = await db.execute(query);
 
     return queryResult.rows.map((row: any) => ({
       recruiterId: row.recruiter_id,
@@ -1711,7 +1729,7 @@ export class DatabaseStorage implements IStorage {
       jobCode: row.job_code || '',
       professionName: row.profession_name || 'N/A',
       companyName: row.company_name || 'N/A',
-      closedDate: row.closed_date?.toISOString() || '',
+      closedDate: row.closed_date ? new Date(row.closed_date).toISOString() : '',
       daysToClose: Math.round(Number(row.days_to_close || 0)),
       salary: Math.round(Number(row.salary_min || 0)),
     }));

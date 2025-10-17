@@ -52,11 +52,11 @@ import {
 } from "lucide-react";
 
 const statusColors: Record<string, string> = {
-  aberto: '#3b82f6',           // Azul
-  aprovada: '#10b981',          // Verde
-  em_recrutamento: '#f59e0b',   // Laranja
-  em_documentacao: '#8b5cf6',   // Roxo
-  closed: '#ef4444',            // Vermelho
+  aberto: '#5B9FED',      // Azul claro
+  aprovada: '#3B82F6',    // Azul médio
+  em_recrutamento: '#60A5FA', // Azul sky
+  em_documentacao: '#2563EB', // Azul royal
+  closed: '#1D4ED8'       // Azul escuro
 };
 
 const statusLabels: Record<string, string> = {
@@ -100,7 +100,19 @@ export default function Dashboard() {
   });
 
   const { data: jobs, isLoading: jobsLoading } = useQuery<JobsListResponse>({
-    queryKey: ["/api/jobs", { limit: 10, offset: 0, search }],
+    queryKey: ["/api/jobs", search],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        limit: "10",
+        offset: "0",
+        ...(search && { search })
+      });
+      const res = await fetch(`/api/jobs?${params}`, {
+        credentials: "include"
+      });
+      if (!res.ok) throw new Error('Failed to fetch jobs');
+      return await res.json();
+    }
   });
 
   const statusVariants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -225,7 +237,7 @@ export default function Dashboard() {
               ) : (
                 <div className="flex items-center justify-around h-64">
                   <div className="text-center">
-                    <div className="text-6xl font-bold text-green-600 mb-2">
+                    <div className="text-6xl font-bold mb-2" style={{ color: '#3B82F6' }}>
                       {jobsSLA?.withinSLA || 0}
                     </div>
                     <div className="text-sm text-muted-foreground font-medium">
@@ -234,7 +246,7 @@ export default function Dashboard() {
                   </div>
                   <div className="h-32 w-px bg-border"></div>
                   <div className="text-center">
-                    <div className="text-6xl font-bold text-red-600 mb-2">
+                    <div className="text-6xl font-bold mb-2" style={{ color: '#1D4ED8' }}>
                       {jobsSLA?.outsideSLA || 0}
                     </div>
                     <div className="text-sm text-muted-foreground font-medium">
@@ -278,7 +290,7 @@ export default function Dashboard() {
                       stroke="hsl(var(--background))"
                     >
                       {jobsByCreator?.slice(0, 5).map((_, index: number) => (
-                        <Cell key={`cell-${index}`} fill={['#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#3b82f6'][index % 5]} />
+                        <Cell key={`cell-${index}`} fill={['#3B82F6', '#60A5FA', '#2563EB', '#1D4ED8', '#5B9FED'][index % 5]} />
                       )) || []}
                     </Pie>
                     <Tooltip 
@@ -325,7 +337,7 @@ export default function Dashboard() {
                       stroke="hsl(var(--background))"
                     >
                       {jobsByCompany?.slice(0, 5).map((_, index: number) => (
-                        <Cell key={`cell-${index}`} fill={['#ef4444', '#10b981', '#3b82f6', '#f59e0b', '#8b5cf6'][index % 5]} />
+                        <Cell key={`cell-${index}`} fill={['#1D4ED8', '#3B82F6', '#5B9FED', '#60A5FA', '#2563EB'][index % 5]} />
                       )) || []}
                     </Pie>
                     <Tooltip 

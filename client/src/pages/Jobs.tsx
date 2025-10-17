@@ -492,15 +492,6 @@ export default function Jobs() {
                               ? "Tente ajustar os filtros de busca"
                               : "Comece criando sua primeira vaga"}
                           </p>
-                          {!search && (
-                            <Button
-                              onClick={() => setShowJobModal(true)}
-                              className="mt-4"
-                            >
-                              <Plus className="h-4 w-4 mr-2" />
-                              Criar Primeira Vaga
-                            </Button>
-                          )}
                         </div>
                       </TableCell>
                     </TableRow>

@@ -245,6 +245,7 @@ export const jobs = pgTable("jobs", {
   createdBy: varchar("created_by").references(() => users.id),
   expiresAt: timestamp("expires_at"),
   slaDeadline: timestamp("sla_deadline"), // SLA de 14 dias para fechamento da vaga
+  notes: text("notes"), // Notas/observações sobre a vaga
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

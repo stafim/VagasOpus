@@ -1,8 +1,13 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { JobWithDetails } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle, Clock, UserCheck, XCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { CheckCircle, Clock, UserCheck, XCircle, StickyNote } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 interface JobDetailsModalProps {
   isOpen: boolean;
@@ -11,10 +16,51 @@ interface JobDetailsModalProps {
 }
 
 export default function JobDetailsModal({ isOpen, onClose, jobId }: JobDetailsModalProps) {
-  const { data: job, isLoading } = useQuery<JobWithDetails>({
+  const [isEditingNotes, setIsEditingNotes] = useState(false);
+  const [notesText, setNotesText] = useState("");
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: job, isLoading } = useQuery<any>({
     queryKey: ["/api/jobs", jobId],
     enabled: !!jobId && isOpen,
   });
+
+  const updateNotesMutation = useMutation({
+    mutationFn: async (notes: string) => {
+      await apiRequest("PATCH", `/api/jobs/${jobId}/notes`, { notes });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Nota salva",
+        description: "A nota foi salva com sucesso",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/jobs", jobId] });
+      setIsEditingNotes(false);
+    },
+    onError: (error) => {
+      console.error("Error updating notes:", error);
+      toast({
+        title: "Erro",
+        description: "Falha ao salvar a nota",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleSaveNotes = () => {
+    updateNotesMutation.mutate(notesText);
+  };
+
+  const handleCreateNote = () => {
+    setNotesText(job?.notes || "");
+    setIsEditingNotes(true);
+  };
+
+  const handleCancelNotes = () => {
+    setNotesText("");
+    setIsEditingNotes(false);
+  };
 
   const formatDateTime = (date: string | Date) => {
     return new Date(date).toLocaleString("pt-BR", {
@@ -157,8 +203,22 @@ export default function JobDetailsModal({ isOpen, onClose, jobId }: JobDetailsMo
 
             {/* Informações adicionais */}
             <div className="border-t pt-4">
-              <h3 className="font-semibold mb-3">Informações Adicionais</h3>
-              <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold">Informações Adicionais</h3>
+                {!isEditingNotes && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCreateNote}
+                    data-testid="button-create-note"
+                  >
+                    <StickyNote className="h-4 w-4 mr-2" />
+                    {job?.notes ? "Editar Nota" : "Criar Nota"}
+                  </Button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-sm mb-4">
                 <div>
                   <p className="text-muted-foreground">Status Atual:</p>
                   <p className="font-medium">{getStatusLabel(job.status)}</p>
@@ -180,6 +240,51 @@ export default function JobDetailsModal({ isOpen, onClose, jobId }: JobDetailsMo
                   </div>
                 )}
               </div>
+
+              {/* Notas section */}
+              {isEditingNotes ? (
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Nota:</label>
+                    <Textarea
+                      value={notesText}
+                      onChange={(e) => setNotesText(e.target.value)}
+                      placeholder="Digite suas observações sobre esta vaga..."
+                      className="min-h-[120px]"
+                      data-testid="textarea-notes"
+                    />
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCancelNotes}
+                      disabled={updateNotesMutation.isPending}
+                      data-testid="button-cancel-notes"
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleSaveNotes}
+                      disabled={updateNotesMutation.isPending}
+                      data-testid="button-save-notes"
+                    >
+                      {updateNotesMutation.isPending ? "Salvando..." : "Salvar"}
+                    </Button>
+                  </div>
+                </div>
+              ) : job?.notes && (
+                <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <StickyNote className="h-4 w-4 text-muted-foreground mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium mb-1">Nota:</p>
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">{job.notes}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         ) : (

@@ -841,6 +841,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Job notes update endpoint
+  app.patch('/api/jobs/:id/notes', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { notes } = req.body;
+      
+      // Update only the notes
+      const job = await storage.updateJob(id, { notes });
+      res.json(job);
+    } catch (error) {
+      console.error("Error updating job notes:", error);
+      res.status(500).json({ message: "Failed to update job notes" });
+    }
+  });
+
   app.delete('/api/jobs/:id', isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;

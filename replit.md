@@ -6,6 +6,18 @@ This is a job management system (VagasPro) built with React and Express, designe
 
 # Recent Changes (October 17, 2025)
 
+## Job Notes Feature
+- **Added**: Campo de notas nas vagas para observações e anotações
+- **Features**:
+  - Botão "Criar Nota" / "Editar Nota" no modal de detalhes
+  - Campo de texto para digitar observações sobre a vaga
+  - Notas exibidas nas informações adicionais do modal
+  - Persistência das notas no banco de dados
+- **Backend**: 
+  - Nova rota `PATCH /api/jobs/:id/notes` para atualizar notas
+  - Campo `notes` (TEXT) adicionado à tabela jobs
+- **UX**: Botões "Salvar" e "Cancelar" para gerenciar edição de notas
+
 ## Job Details Modal - Timeline View
 - **Created**: New modal to display job history and timeline
 - **Features**:

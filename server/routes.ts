@@ -847,8 +847,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const { notes } = req.body;
       
+      console.log("Updating job notes:", { id, notes, noteLength: notes?.length });
+      
       // Update only the notes
       const job = await storage.updateJob(id, { notes });
+      console.log("Updated job notes result:", { jobId: job.id, hasNotes: !!job.notes, notesLength: job.notes?.length });
       res.json(job);
     } catch (error) {
       console.error("Error updating job notes:", error);

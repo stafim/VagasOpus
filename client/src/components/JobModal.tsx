@@ -204,17 +204,43 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
 
   const createJobMutation = useMutation({
     mutationFn: async (data: JobFormData) => {
-      // Convert form data to API format
-      const apiData = {
-        ...data,
+      // Convert form data to API format and remove invalid fields
+      const apiData: any = {
+        professionId: data.professionId,
+        companyId: data.companyId,
+        description: data.description || undefined,
+        costCenterId: data.costCenterId || undefined,
+        recruiterId: data.recruiterId || undefined,
+        department: data.department || undefined,
+        location: data.location || undefined,
+        contractType: data.contractType,
+        jobType: data.jobType || undefined,
         salaryMin: data.salaryMin || undefined,
-        bonus: data.bonus || undefined,
-        ageRangeMin: data.ageRangeMin ? parseInt(data.ageRangeMin) : undefined,
-        ageRangeMax: data.ageRangeMax ? parseInt(data.ageRangeMax) : undefined,
+        status: data.status,
+        clientId: data.clientId || undefined,
         vacancyQuantity: data.vacancyQuantity ? parseInt(data.vacancyQuantity) : 1,
+        gender: data.gender || undefined,
+        workScaleId: data.workScaleId || undefined,
+        workHours: data.workHours || undefined,
+        bonus: data.bonus || undefined,
+        hasHazardPay: data.hasHazardPay || undefined,
+        unhealthinessLevel: data.unhealthinessLevel || undefined,
         openingDate: data.openingDate ? new Date(data.openingDate).toISOString() : undefined,
         startDate: data.startDate ? new Date(data.startDate).toISOString() : undefined,
+        openingReason: data.openingReason || undefined,
+        replacementEmployeeName: data.replacementEmployeeName || undefined,
+        ageRangeMin: data.ageRangeMin ? parseInt(data.ageRangeMin) : undefined,
+        ageRangeMax: data.ageRangeMax ? parseInt(data.ageRangeMax) : undefined,
+        specifications: data.specifications || undefined,
       };
+      
+      // Remove undefined values to keep payload clean
+      Object.keys(apiData).forEach(key => {
+        if (apiData[key] === undefined || apiData[key] === "" || apiData[key] === null) {
+          delete apiData[key];
+        }
+      });
+      
       const response = await apiRequest("POST", "/api/jobs", apiData);
       return response.json();
     },
@@ -238,17 +264,42 @@ export default function JobModal({ isOpen, onClose, jobId }: JobModalProps) {
 
   const updateJobMutation = useMutation({
     mutationFn: async (data: Partial<JobFormData>) => {
-      // Convert form data to API format
-      const apiData = {
-        ...data,
+      // Convert form data to API format and remove invalid fields
+      const apiData: any = {
+        professionId: data.professionId,
+        description: data.description || undefined,
+        costCenterId: data.costCenterId || undefined,
+        recruiterId: data.recruiterId || undefined,
+        department: data.department || undefined,
+        location: data.location || undefined,
+        contractType: data.contractType,
+        jobType: data.jobType || undefined,
         salaryMin: data.salaryMin || undefined,
+        status: data.status,
+        clientId: data.clientId || undefined,
+        vacancyQuantity: data.vacancyQuantity ? parseInt(data.vacancyQuantity) : undefined,
+        gender: data.gender || undefined,
+        workScaleId: data.workScaleId || undefined,
+        workHours: data.workHours || undefined,
         bonus: data.bonus || undefined,
-        ageRangeMin: data.ageRangeMin ? parseInt(data.ageRangeMin) : undefined,
-        ageRangeMax: data.ageRangeMax ? parseInt(data.ageRangeMax) : undefined,
-        vacancyQuantity: data.vacancyQuantity ? parseInt(data.vacancyQuantity) : 1,
+        hasHazardPay: data.hasHazardPay || undefined,
+        unhealthinessLevel: data.unhealthinessLevel || undefined,
         openingDate: data.openingDate ? new Date(data.openingDate).toISOString() : undefined,
         startDate: data.startDate ? new Date(data.startDate).toISOString() : undefined,
+        openingReason: data.openingReason || undefined,
+        replacementEmployeeName: data.replacementEmployeeName || undefined,
+        ageRangeMin: data.ageRangeMin ? parseInt(data.ageRangeMin) : undefined,
+        ageRangeMax: data.ageRangeMax ? parseInt(data.ageRangeMax) : undefined,
+        specifications: data.specifications || undefined,
       };
+      
+      // Remove undefined, empty string, and null values
+      Object.keys(apiData).forEach(key => {
+        if (apiData[key] === undefined || apiData[key] === "" || apiData[key] === null) {
+          delete apiData[key];
+        }
+      });
+      
       const response = await apiRequest("PUT", `/api/jobs/${jobId}`, apiData);
       return response.json();
     },

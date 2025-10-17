@@ -525,15 +525,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user?.id || (req.session as any).user?.id;
       
+      console.log("=== DEBUG JOB CREATION ===");
+      console.log("Request body:", JSON.stringify(req.body, null, 2));
+      
       // Calculate SLA deadline (14 days from now)
       const slaDeadline = new Date();
       slaDeadline.setDate(slaDeadline.getDate() + 14);
       
+      // Clean the data - remove empty strings and convert to proper types
+      const cleanedBody = Object.fromEntries(
+        Object.entries(req.body).filter(([_, v]) => v !== "" && v !== null && v !== undefined)
+      );
+      
+      console.log("Cleaned body:", JSON.stringify(cleanedBody, null, 2));
+      
       const validatedData = insertJobSchema.parse({
-        ...req.body,
+        ...cleanedBody,
         createdBy: userId,
         slaDeadline: slaDeadline.toISOString(),
       });
+      
+      console.log("Validated data:", JSON.stringify(validatedData, null, 2));
       
       // Validate profession exists and is active  
       const profession = await storage.getProfession(validatedData.professionId);

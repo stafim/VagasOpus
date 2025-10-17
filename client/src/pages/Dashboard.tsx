@@ -218,62 +218,25 @@ export default function Dashboard() {
               {openJobsByMonthLoading ? (
                 <Skeleton className="h-64 w-full" />
               ) : (
-                <ResponsiveContainer width="100%" height={280}>
-                  <BarChart
-                    data={(() => {
-                      let cumulative = 0;
-                      return openJobsByMonth?.map((item) => {
-                        cumulative += item.count;
-                        return {
-                          month: item.month,
-                          count: item.count,
-                          total: cumulative
-                        };
-                      }) || [];
-                    })()}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-                    <XAxis 
-                      dataKey="month" 
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <YAxis 
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <Tooltip 
-                      contentStyle={{
-                        backgroundColor: 'hsl(var(--popover))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                      }}
-                      formatter={(value: number, name: string) => {
-                        if (name === 'total') return [value, 'Total Acumulado'];
-                        if (name === 'count') return [value, 'Novas Vagas'];
-                        return [value, name];
-                      }}
-                    />
-                    <Bar 
-                      dataKey="count" 
-                      fill="#10b981"
-                      radius={[8, 8, 0, 0]}
-                      name="Novas"
-                    />
-                    <Bar 
-                      dataKey="total" 
-                      fill="#3b82f6"
-                      radius={[8, 8, 0, 0]}
-                      name="Total"
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
+                <div className="flex items-center justify-around h-64">
+                  <div className="text-center">
+                    <div className="text-6xl font-bold text-green-600 mb-2">
+                      {openJobsByMonth?.[openJobsByMonth.length - 1]?.count || 0}
+                    </div>
+                    <div className="text-sm text-muted-foreground font-medium">
+                      Novas Vagas Este Mês
+                    </div>
+                  </div>
+                  <div className="h-32 w-px bg-border"></div>
+                  <div className="text-center">
+                    <div className="text-6xl font-bold text-blue-600 mb-2">
+                      {openJobsByMonth?.reduce((acc, item) => acc + item.count, 0) || 0}
+                    </div>
+                    <div className="text-sm text-muted-foreground font-medium">
+                      Total Acumulado
+                    </div>
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>

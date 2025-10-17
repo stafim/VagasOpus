@@ -173,7 +173,7 @@ export default function Dashboard() {
   });
 
   const statusVariants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-    closed: "destructive",
+    closed: "default",
     aberto: "default",
     aprovada: "default",
     em_recrutamento: "outline",
@@ -508,9 +508,15 @@ export default function Dashboard() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={statusVariants[job.status] || "secondary"}>
-                            {statusLabels[job.status] || job.status}
-                          </Badge>
+                          {job.status === "closed" ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-600 text-white border border-green-600">
+                              {statusLabels[job.status] || job.status}
+                            </span>
+                          ) : (
+                            <Badge variant={statusVariants[job.status] || "secondary"}>
+                              {statusLabels[job.status] || job.status}
+                            </Badge>
+                          )}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center">

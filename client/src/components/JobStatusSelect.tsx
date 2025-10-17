@@ -27,7 +27,7 @@ const statusLabels: Record<string, string> = {
 };
 
 const statusVariants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  closed: "destructive",
+  closed: "default",
   aberto: "default",
   aprovada: "default",
   em_recrutamento: "outline",
@@ -88,6 +88,7 @@ export default function JobStatusSelect({ jobId, currentStatus, onStatusChange }
         data-testid={`status-badge-${jobId}`}
       >
         <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+          currentStatus === "closed" ? "bg-green-600 text-white border-green-600" :
           statusVariants[currentStatus] === "default" ? "bg-primary text-primary-foreground border-primary" :
           statusVariants[currentStatus] === "secondary" ? "bg-secondary text-secondary-foreground border-secondary" :
           statusVariants[currentStatus] === "destructive" ? "bg-destructive text-destructive-foreground border-destructive" :

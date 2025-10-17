@@ -1,10 +1,5 @@
 // Job status configuration
 export const JOB_STATUS_CONFIG = {
-  active: {
-    label: "Ativa",
-    variant: "default" as const,
-    description: "Vaga publicada e recebendo candidaturas"
-  },
   aberto: {
     label: "Aberto",
     variant: "default" as const,
@@ -44,11 +39,6 @@ export const JOB_STATUS_CONFIG = {
     label: "Fechada",
     variant: "destructive" as const,
     description: "Vaga encerrada com sucesso"
-  },
-  expired: {
-    label: "Expirada",
-    variant: "destructive" as const,
-    description: "Vaga expirada sem conclusão"
   }
 } as const;
 

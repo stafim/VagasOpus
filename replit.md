@@ -86,7 +86,8 @@ This is a job management system (VagasPro) built with React and Express, designe
 
 ## Job Status Updates
 - **Added new statuses**: "dp", "em_mobilizacao", "cancelada"
-- **Removed status**: "paused"
+- **Removed statuses**: "paused", "active" (Ativa), "expired" (Expirada)
+- **Status "Fechada" color**: Changed from red (destructive) to green (#10b981)
 - **Updated**: All status configurations in shared/constants.ts and frontend components
 
 # User Preferences

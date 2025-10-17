@@ -56,9 +56,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 const statusLabels: Record<string, string> = {
   active: "Ativa",
-  draft: "Rascunho",
   closed: "Fechada",
-  expired: "Expirada",
   aberto: "Aberto",
   em_recrutamento: "Em Recrutamento",
   em_documentacao: "Em Documentação"
@@ -184,9 +182,7 @@ export default function Jobs() {
 
   const statusVariants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
     active: "default",
-    draft: "secondary", 
-    closed: "destructive",
-    expired: "destructive"
+    closed: "destructive"
   };
 
   const formatSalary = (min?: string, max?: string) => {

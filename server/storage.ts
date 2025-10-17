@@ -1653,68 +1653,67 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getJobClosureReport(): Promise<any[]> {
-    const result = await db
-      .select({
-        recruiterId: users.id,
-        recruiterFirstName: users.firstName,
-        recruiterLastName: users.lastName,
-        recruiterEmail: users.email,
-        closedJobsCount: count(jobs.id),
-        avgDaysToClose: sql<number>`COALESCE(AVG(EXTRACT(EPOCH FROM (${jobs.updatedAt} - ${jobs.createdAt})) / 86400), 0)`,
-        avgSalaryMin: sql<number>`COALESCE(AVG(CAST(${jobs.salaryMin} AS DECIMAL)), 0)`,
-        avgSalaryMax: sql<number>`COALESCE(AVG(CAST(${jobs.salaryMax} AS DECIMAL)), 0)`,
-      })
-      .from(jobs)
-      .innerJoin(users, eq(jobs.recruiterId, users.id))
-      .where(eq(jobs.status, 'fechada'))
-      .groupBy(users.id, users.firstName, users.lastName, users.email)
-      .orderBy(desc(count(jobs.id)));
+    const queryResult = await db.execute(sql`
+      SELECT 
+        u.id as recruiter_id,
+        u.first_name as recruiter_first_name,
+        u.last_name as recruiter_last_name,
+        u.email as recruiter_email,
+        COUNT(j.id) as closed_jobs_count,
+        COALESCE(AVG(EXTRACT(EPOCH FROM (j.updated_at - j.created_at)) / 86400), 0) as avg_days_to_close,
+        COALESCE(AVG(j.salary_min), 0) as avg_salary
+      FROM jobs j
+      INNER JOIN users u ON j.recruiter_id = u.id
+      WHERE j.status = 'closed'
+      GROUP BY u.id, u.first_name, u.last_name, u.email
+      ORDER BY COUNT(j.id) DESC
+    `);
 
-    return result.map((row) => ({
-      recruiterId: row.recruiterId,
-      recruiterName: row.recruiterFirstName && row.recruiterLastName 
-        ? `${row.recruiterFirstName} ${row.recruiterLastName}` 
-        : row.recruiterEmail || '',
-      recruiterEmail: row.recruiterEmail || '',
-      closedJobsCount: Number(row.closedJobsCount),
-      averageDaysToClose: Math.round(Number(row.avgDaysToClose)),
-      averageSalary: Math.round((Number(row.avgSalaryMin) + Number(row.avgSalaryMax)) / 2),
+    return queryResult.rows.map((row: any) => ({
+      recruiterId: row.recruiter_id,
+      recruiterName: row.recruiter_first_name && row.recruiter_last_name 
+        ? `${row.recruiter_first_name} ${row.recruiter_last_name}` 
+        : row.recruiter_email || '',
+      recruiterEmail: row.recruiter_email || '',
+      closedJobsCount: Number(row.closed_jobs_count),
+      averageDaysToClose: Math.round(Number(row.avg_days_to_close)),
+      averageSalary: Math.round(Number(row.avg_salary)),
     }));
   }
 
   async getClosedJobsByRecruiter(): Promise<any[]> {
-    const result = await db
-      .select({
-        recruiterId: users.id,
-        recruiterName: sql<string>`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
-        recruiterEmail: users.email,
-        jobId: jobs.id,
-        jobCode: jobs.jobCode,
-        professionName: professions.name,
-        companyName: companies.name,
-        closedDate: jobs.updatedAt,
-        daysToClose: sql<number>`EXTRACT(EPOCH FROM (${jobs.updatedAt} - ${jobs.createdAt})) / 86400`,
-        salaryMin: jobs.salaryMin,
-        salaryMax: jobs.salaryMax,
-      })
-      .from(jobs)
-      .innerJoin(users, eq(jobs.recruiterId, users.id))
-      .leftJoin(professions, eq(jobs.professionId, professions.id))
-      .leftJoin(companies, eq(jobs.companyId, companies.id))
-      .where(eq(jobs.status, 'fechada'))
-      .orderBy(desc(jobs.updatedAt));
+    const queryResult = await db.execute(sql`
+      SELECT 
+        u.id as recruiter_id,
+        COALESCE(CONCAT(u.first_name, ' ', u.last_name), u.email) as recruiter_name,
+        u.email as recruiter_email,
+        j.id as job_id,
+        j.job_code,
+        p.name as profession_name,
+        c.name as company_name,
+        j.updated_at as closed_date,
+        j.created_at as created_date,
+        EXTRACT(EPOCH FROM (j.updated_at - j.created_at)) / 86400 as days_to_close,
+        j.salary_min
+      FROM jobs j
+      INNER JOIN users u ON j.recruiter_id = u.id
+      LEFT JOIN professions p ON j.profession_id = p.id
+      LEFT JOIN companies c ON j.company_id = c.id
+      WHERE j.status = 'closed'
+      ORDER BY j.updated_at DESC
+    `);
 
-    return result.map((row) => ({
-      recruiterId: row.recruiterId,
-      recruiterName: row.recruiterName,
-      recruiterEmail: row.recruiterEmail || '',
-      jobId: row.jobId,
-      jobCode: row.jobCode || '',
-      professionName: row.professionName || 'N/A',
-      companyName: row.companyName || 'N/A',
-      closedDate: row.closedDate?.toISOString() || '',
-      daysToClose: Math.round(Number(row.daysToClose)),
-      salary: Math.round((Number(row.salaryMin || 0) + Number(row.salaryMax || 0)) / 2),
+    return queryResult.rows.map((row: any) => ({
+      recruiterId: row.recruiter_id,
+      recruiterName: row.recruiter_name || '',
+      recruiterEmail: row.recruiter_email || '',
+      jobId: row.job_id,
+      jobCode: row.job_code || '',
+      professionName: row.profession_name || 'N/A',
+      companyName: row.company_name || 'N/A',
+      closedDate: row.closed_date?.toISOString() || '',
+      daysToClose: Math.round(Number(row.days_to_close || 0)),
+      salary: Math.round(Number(row.salary_min || 0)),
     }));
   }
 }

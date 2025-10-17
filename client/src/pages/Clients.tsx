@@ -8,6 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -19,6 +27,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { UserCircle, MapPin, Phone, Mail, Pencil, Trash2 } from "lucide-react";
 
 export default function Clients() {
   const [showClientModal, setShowClientModal] = useState(false);
@@ -104,44 +113,97 @@ export default function Clients() {
           </div>
         </div>
 
-        {/* Clients Grid */}
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-64 w-full" />
-            ))}
-          </div>
-        ) : (
-          <>
-            {filteredClients.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredClients.map((client) => (
-                  <Card key={client.id} className="hover:shadow-md transition-shadow" data-testid={`card-client-${client.id}`}>
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                            <i className="fas fa-user-tie text-primary"></i>
+        {/* Clients Table */}
+        <Card>
+          <CardContent className="p-0">
+            {isLoading ? (
+              <div className="p-6 space-y-4">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Skeleton key={i} className="h-16 w-full" />
+                ))}
+              </div>
+            ) : filteredClients.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[250px]">Cliente</TableHead>
+                    <TableHead>Contato</TableHead>
+                    <TableHead>Telefone</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Localização</TableHead>
+                    <TableHead className="text-right w-[100px]">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredClients.map((client) => (
+                    <TableRow key={client.id} data-testid={`row-client-${client.id}`}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <UserCircle className="h-5 w-5 text-primary" />
                           </div>
-                          <div>
-                            <CardTitle className="text-lg" data-testid={`text-client-name-${client.id}`}>
+                          <div className="min-w-0">
+                            <div className="font-medium" data-testid={`text-client-name-${client.id}`}>
                               {client.name}
-                            </CardTitle>
+                            </div>
                             {client.city && (
-                              <p className="text-xs text-muted-foreground">
+                              <div className="text-xs text-muted-foreground flex items-center gap-1">
+                                <MapPin className="h-3 w-3" />
                                 {client.city} - {client.state}
-                              </p>
+                              </div>
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center space-x-1">
+                      </TableCell>
+                      <TableCell>
+                        {client.contactPerson ? (
+                          <span className="text-sm" data-testid={`text-contact-${client.id}`}>
+                            {client.contactPerson}
+                          </span>
+                        ) : (
+                          <span className="text-sm text-muted-foreground italic">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {client.phone ? (
+                          <div className="flex items-center gap-1 text-sm" data-testid={`text-phone-${client.id}`}>
+                            <Phone className="h-3 w-3 text-muted-foreground" />
+                            {client.phone}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-muted-foreground italic">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {client.email ? (
+                          <div className="flex items-center gap-1 text-sm" data-testid={`text-email-${client.id}`}>
+                            <Mail className="h-3 w-3 text-muted-foreground" />
+                            {client.email}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-muted-foreground italic">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {client.address ? (
+                          <div className="max-w-xs">
+                            <span className="text-sm text-muted-foreground line-clamp-1" data-testid={`text-address-${client.id}`}>
+                              {client.address}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-muted-foreground italic">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEditClient(client.id)}
                             data-testid={`button-edit-client-${client.id}`}
                           >
-                            <i className="fas fa-edit text-primary"></i>
+                            <Pencil className="h-4 w-4 text-primary" />
                           </Button>
                           <Button
                             variant="ghost"
@@ -149,61 +211,31 @@ export default function Clients() {
                             onClick={() => setDeletingClientId(client.id)}
                             data-testid={`button-delete-client-${client.id}`}
                           >
-                            <i className="fas fa-trash text-destructive"></i>
+                            <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        {client.contactPerson && (
-                          <div className="flex items-center text-sm">
-                            <i className="fas fa-user w-4 text-muted-foreground mr-2"></i>
-                            <span data-testid={`text-contact-${client.id}`}>{client.contactPerson}</span>
-                          </div>
-                        )}
-                        {client.phone && (
-                          <div className="flex items-center text-sm">
-                            <i className="fas fa-phone w-4 text-muted-foreground mr-2"></i>
-                            <span data-testid={`text-phone-${client.id}`}>{client.phone}</span>
-                          </div>
-                        )}
-                        {client.email && (
-                          <div className="flex items-center text-sm">
-                            <i className="fas fa-envelope w-4 text-muted-foreground mr-2"></i>
-                            <span data-testid={`text-email-${client.id}`}>{client.email}</span>
-                          </div>
-                        )}
-                        {client.address && (
-                          <div className="flex items-start text-sm">
-                            <i className="fas fa-map-marker-alt w-4 text-muted-foreground mr-2 mt-0.5"></i>
-                            <span className="line-clamp-2" data-testid={`text-address-${client.id}`}>{client.address}</span>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             ) : (
-              <Card>
-                <CardContent className="text-center py-12">
-                  <i className="fas fa-user-tie text-6xl text-muted-foreground mb-4"></i>
-                  <h3 className="text-xl font-semibold mb-2">Nenhum cliente encontrado</h3>
-                  <p className="text-muted-foreground mb-4">
-                    {search ? "Tente ajustar sua busca" : "Comece cadastrando seu primeiro cliente"}
-                  </p>
-                  {!search && (
-                    <Button onClick={() => setShowClientModal(true)} data-testid="button-create-first-client">
-                      <i className="fas fa-plus mr-2"></i>
-                      Novo Cliente
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
+              <div className="text-center py-12">
+                <UserCircle className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Nenhum cliente encontrado</h3>
+                <p className="text-muted-foreground mb-4">
+                  {search ? "Tente ajustar sua busca" : "Comece cadastrando seu primeiro cliente"}
+                </p>
+                {!search && (
+                  <Button onClick={() => setShowClientModal(true)} data-testid="button-create-first-client">
+                    <i className="fas fa-plus mr-2"></i>
+                    Novo Cliente
+                  </Button>
+                )}
+              </div>
             )}
-          </>
-        )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Client Modal */}

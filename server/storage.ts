@@ -199,6 +199,7 @@ export interface IStorage {
   
   // Job closure report
   getJobClosureReport(): Promise<any[]>;
+  getClosedJobsByRecruiter(): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1655,7 +1656,8 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .select({
         recruiterId: users.id,
-        recruiterName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
+        recruiterFirstName: users.firstName,
+        recruiterLastName: users.lastName,
         recruiterEmail: users.email,
         closedJobsCount: count(jobs.id),
         avgDaysToClose: sql<number>`COALESCE(AVG(EXTRACT(EPOCH FROM (${jobs.updatedAt} - ${jobs.createdAt})) / 86400), 0)`,
@@ -1664,17 +1666,55 @@ export class DatabaseStorage implements IStorage {
       })
       .from(jobs)
       .innerJoin(users, eq(jobs.recruiterId, users.id))
-      .where(eq(jobs.status, 'closed'))
+      .where(eq(jobs.status, 'fechada'))
       .groupBy(users.id, users.firstName, users.lastName, users.email)
       .orderBy(desc(count(jobs.id)));
 
     return result.map((row) => ({
       recruiterId: row.recruiterId,
-      recruiterName: row.recruiterName,
-      recruiterEmail: row.recruiterEmail,
+      recruiterName: row.recruiterFirstName && row.recruiterLastName 
+        ? `${row.recruiterFirstName} ${row.recruiterLastName}` 
+        : row.recruiterEmail || '',
+      recruiterEmail: row.recruiterEmail || '',
       closedJobsCount: Number(row.closedJobsCount),
       averageDaysToClose: Math.round(Number(row.avgDaysToClose)),
       averageSalary: Math.round((Number(row.avgSalaryMin) + Number(row.avgSalaryMax)) / 2),
+    }));
+  }
+
+  async getClosedJobsByRecruiter(): Promise<any[]> {
+    const result = await db
+      .select({
+        recruiterId: users.id,
+        recruiterName: sql<string>`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
+        recruiterEmail: users.email,
+        jobId: jobs.id,
+        jobCode: jobs.jobCode,
+        professionName: professions.name,
+        companyName: companies.name,
+        closedDate: jobs.updatedAt,
+        daysToClose: sql<number>`EXTRACT(EPOCH FROM (${jobs.updatedAt} - ${jobs.createdAt})) / 86400`,
+        salaryMin: jobs.salaryMin,
+        salaryMax: jobs.salaryMax,
+      })
+      .from(jobs)
+      .innerJoin(users, eq(jobs.recruiterId, users.id))
+      .leftJoin(professions, eq(jobs.professionId, professions.id))
+      .leftJoin(companies, eq(jobs.companyId, companies.id))
+      .where(eq(jobs.status, 'fechada'))
+      .orderBy(desc(jobs.updatedAt));
+
+    return result.map((row) => ({
+      recruiterId: row.recruiterId,
+      recruiterName: row.recruiterName,
+      recruiterEmail: row.recruiterEmail || '',
+      jobId: row.jobId,
+      jobCode: row.jobCode || '',
+      professionName: row.professionName || 'N/A',
+      companyName: row.companyName || 'N/A',
+      closedDate: row.closedDate?.toISOString() || '',
+      daysToClose: Math.round(Number(row.daysToClose)),
+      salary: Math.round((Number(row.salaryMin || 0) + Number(row.salaryMax || 0)) / 2),
     }));
   }
 }

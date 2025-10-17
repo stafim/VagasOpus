@@ -135,6 +135,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/reports/closed-jobs-by-recruiter', isAuthenticated, async (req, res) => {
+    try {
+      const report = await storage.getClosedJobsByRecruiter();
+      res.json(report);
+    } catch (error) {
+      console.error("Error fetching closed jobs by recruiter report:", error);
+      res.status(500).json({ message: "Failed to fetch closed jobs by recruiter report" });
+    }
+  });
+
   // Profession routes
   app.get('/api/professions', isAuthenticated, async (req, res) => {
     try {

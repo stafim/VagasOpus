@@ -11,12 +11,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, TrendingUp, Clock, DollarSign } from "lucide-react";
-import type { JobClosureReportItem } from "@shared/schema";
+import { Trophy, TrendingUp, Clock, DollarSign, Briefcase } from "lucide-react";
+import type { JobClosureReportItem, ClosedJobsByRecruiterItem } from "@shared/schema";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 export default function JobClosureReport() {
   const { data: reportData, isLoading } = useQuery<JobClosureReportItem[]>({
     queryKey: ["/api/reports/job-closure"],
+  });
+
+  const { data: closedJobsData, isLoading: isLoadingClosedJobs } = useQuery<ClosedJobsByRecruiterItem[]>({
+    queryKey: ["/api/reports/closed-jobs-by-recruiter"],
   });
 
   const formatCurrency = (value: number) => {
@@ -180,6 +186,90 @@ export default function JobClosureReport() {
                 <p className="text-lg font-medium mb-2">Nenhum dado disponível</p>
                 <p className="text-sm text-muted-foreground">
                   Não há vagas fechadas para gerar o relatório
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Closed Jobs by Recruiter */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Briefcase className="h-5 w-5" />
+              Vagas Fechadas por Recrutadora
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoadingClosedJobs ? (
+              <div className="space-y-4">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-16 w-full" />
+                ))}
+              </div>
+            ) : closedJobsData && closedJobsData.length > 0 ? (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Código da Vaga</TableHead>
+                      <TableHead>Profissão</TableHead>
+                      <TableHead>Empresa</TableHead>
+                      <TableHead>Recrutadora</TableHead>
+                      <TableHead className="text-center">Data de Fechamento</TableHead>
+                      <TableHead className="text-center">Dias para Fechar</TableHead>
+                      <TableHead className="text-right">Salário</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {closedJobsData.map((job) => (
+                      <TableRow key={job.jobId} data-testid={`row-closed-job-${job.jobId}`}>
+                        <TableCell>
+                          <Badge variant="outline" className="font-mono">
+                            {job.jobCode || job.jobId.slice(0, 8)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-medium">{job.professionName}</div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm text-muted-foreground">
+                            {job.companyName}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            <div className="font-medium">{job.recruiterName}</div>
+                            <div className="text-xs text-muted-foreground">{job.recruiterEmail}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="text-sm">
+                            {job.closedDate ? format(new Date(job.closedDate), "dd/MM/yyyy", { locale: ptBR }) : '-'}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{job.daysToClose}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="font-medium">
+                            {formatCurrency(job.salary)}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Briefcase className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                <p className="text-lg font-medium mb-2">Nenhuma vaga fechada</p>
+                <p className="text-sm text-muted-foreground">
+                  Não há vagas com status "fechada" no sistema
                 </p>
               </div>
             )}

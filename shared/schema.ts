@@ -780,6 +780,19 @@ export type JobClosureReportItem = {
   averageSalary: number;
 };
 
+export type ClosedJobsByRecruiterItem = {
+  recruiterId: string;
+  recruiterName: string;
+  recruiterEmail: string;
+  jobId: string;
+  jobCode: string;
+  professionName: string;
+  companyName: string;
+  closedDate: string;
+  daysToClose: number;
+  salary: number;
+};
+
 export type OpenJobsByMonthResponse = Array<{ month: string; count: number }>;
 
 export type JobsByCreatorResponse = Array<{ 

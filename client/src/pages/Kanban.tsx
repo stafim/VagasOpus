@@ -88,6 +88,7 @@ export default function Kanban() {
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [notes, setNotes] = useState("");
+  const [showNotesReport, setShowNotesReport] = useState(false);
 
   // Parse jobId from URL query string
   const urlParams = new URLSearchParams(location.split('?')[1] || '');
@@ -292,26 +293,37 @@ export default function Kanban() {
       <div className="space-y-6">
         {/* Filter by Job */}
         <div className="bg-card p-4 rounded-lg border border-border">
-          <div className="flex items-center gap-4">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            {jobs.length === 0 ? (
-              <div className="text-sm text-muted-foreground">
-                Nenhuma vaga cadastrada. Crie uma vaga primeiro para usar o Kanban.
-              </div>
-            ) : (
-              <Select value={selectedJobFilter} onValueChange={setSelectedJobFilter}>
-                <SelectTrigger className="w-[300px]" data-testid="select-job-filter">
-                  <SelectValue placeholder="Selecione uma vaga" />
-                </SelectTrigger>
-                <SelectContent>
-                  {jobs.map((job: any) => (
-                    <SelectItem key={job.id} value={job.id}>
-                      [{job.jobCode || job.id.slice(0, 6)}] {job.profession?.name || job.title} - {job.company?.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              {jobs.length === 0 ? (
+                <div className="text-sm text-muted-foreground">
+                  Nenhuma vaga cadastrada. Crie uma vaga primeiro para usar o Kanban.
+                </div>
+              ) : (
+                <Select value={selectedJobFilter} onValueChange={setSelectedJobFilter}>
+                  <SelectTrigger className="w-[300px]" data-testid="select-job-filter">
+                    <SelectValue placeholder="Selecione uma vaga" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {jobs.map((job: any) => (
+                      <SelectItem key={job.id} value={job.id}>
+                        [{job.jobCode || job.id.slice(0, 6)}] {job.profession?.name || job.title} - {job.company?.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowNotesReport(true)}
+              data-testid="button-notes-report"
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              Relatório de Notas
+            </Button>
           </div>
         </div>
 
@@ -591,6 +603,118 @@ export default function Kanban() {
                 Salvar Notas
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Notes Report Modal */}
+      <Dialog open={showNotesReport} onOpenChange={setShowNotesReport}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Relatório de Notas dos Candidatos</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {applications.filter(app => app.notes && app.notes.trim() !== "").length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <FileText className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                <p className="text-lg font-medium">Nenhuma nota registrada</p>
+                <p className="text-sm">Adicione notas aos candidatos para vê-las aqui.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {applications
+                  .filter(app => app.notes && app.notes.trim() !== "")
+                  .map((application) => (
+                    <Card key={application.id} className="border-l-4 border-l-primary">
+                      <CardContent className="p-4">
+                        <div className="space-y-3">
+                          {/* Candidate Header */}
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start gap-3">
+                              <Avatar className="h-10 w-10">
+                                <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                                  {getInitials(application.candidate?.name || "?")}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <h4 className="font-semibold text-base">
+                                  {application.candidate?.name || "Candidato"}
+                                </h4>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                    <Mail className="h-3 w-3" />
+                                    <span>{application.candidate?.email || "N/A"}</span>
+                                  </div>
+                                  {application.candidate?.phone && (
+                                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                      <Phone className="h-3 w-3" />
+                                      <span>{application.candidate.phone}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <Badge variant="outline">
+                              {KANBAN_STAGES.find(s => s.id === application.kanbanStage)?.label || application.kanbanStage}
+                            </Badge>
+                          </div>
+
+                          {/* Job Info */}
+                          {application.job && (
+                            <div className="flex items-center gap-4 text-sm bg-muted/50 p-2 rounded">
+                              {application.job.profession && (
+                                <div className="flex items-center gap-1">
+                                  <Briefcase className="h-3 w-3 text-muted-foreground" />
+                                  <span className="font-medium">{application.job.profession.name}</span>
+                                </div>
+                              )}
+                              {application.job.company && (
+                                <div className="flex items-center gap-1 text-muted-foreground">
+                                  <Users className="h-3 w-3" />
+                                  <span>{application.job.company.name}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Notes */}
+                          <div className="bg-amber-50 dark:bg-amber-950/20 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
+                            <div className="flex items-start gap-2">
+                              <FileText className="h-4 w-4 text-amber-600 dark:text-amber-500 mt-0.5 flex-shrink-0" />
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-amber-900 dark:text-amber-100 mb-1">Notas:</p>
+                                <p className="text-sm text-amber-800 dark:text-amber-200 whitespace-pre-wrap">
+                                  {application.notes}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Footer */}
+                          <div className="flex items-center justify-between pt-2 border-t text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              <span>Aplicado em {formatDate(application.appliedAt)}</span>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                handleOpenNotes(application);
+                                setShowNotesReport(false);
+                              }}
+                              className="h-7"
+                            >
+                              Editar Notas
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

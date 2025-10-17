@@ -21,7 +21,6 @@ interface JobStatusSelectProps {
 const statusLabels: Record<string, string> = {
   active: "Ativa",
   draft: "Rascunho",
-  paused: "Pausada", 
   closed: "Fechada",
   expired: "Expirada",
   aberto: "Aberto",
@@ -33,7 +32,6 @@ const statusLabels: Record<string, string> = {
 const statusVariants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
   active: "default",
   draft: "secondary",
-  paused: "outline",
   closed: "destructive",
   expired: "destructive",
   aberto: "default",
@@ -135,9 +133,6 @@ export default function JobStatusSelect({ jobId, currentStatus, onStatusChange }
           </SelectItem>
           <SelectItem value="em_documentacao" data-testid="status-option-em_documentacao">
             {statusLabels.em_documentacao}
-          </SelectItem>
-          <SelectItem value="paused" data-testid="status-option-paused">
-            {statusLabels.paused}
           </SelectItem>
           <SelectItem value="closed" data-testid="status-option-closed">
             {statusLabels.closed}

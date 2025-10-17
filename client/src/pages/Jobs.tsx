@@ -57,7 +57,6 @@ import { useAuth } from "@/hooks/useAuth";
 const statusLabels: Record<string, string> = {
   active: "Ativa",
   draft: "Rascunho",
-  paused: "Pausada", 
   closed: "Fechada",
   expired: "Expirada",
   aberto: "Aberto",
@@ -186,7 +185,6 @@ export default function Jobs() {
   const statusVariants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
     active: "default",
     draft: "secondary", 
-    paused: "outline",
     closed: "destructive",
     expired: "destructive"
   };

@@ -1,6 +1,5 @@
 import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "./Sidebar";
-import TopBar from "./TopBar";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
 
@@ -39,7 +38,6 @@ export default function Layout({ children }: LayoutProps) {
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
       <div className="flex flex-col w-0 flex-1 overflow-hidden">
-        <TopBar />
         <main className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 lg:p-8">
           {children}
         </main>

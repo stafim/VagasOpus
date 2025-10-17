@@ -517,6 +517,7 @@ export class DatabaseStorage implements IStorage {
     let baseQuery = db
       .select({
         id: jobs.id,
+        jobCode: jobs.jobCode,
         title: jobs.title,
         professionId: jobs.professionId,
         description: jobs.description,
@@ -619,6 +620,7 @@ export class DatabaseStorage implements IStorage {
     const [job] = await db
       .select({
         id: jobs.id,
+        jobCode: jobs.jobCode,
         title: jobs.title,
         professionId: jobs.professionId,
         description: jobs.description,
@@ -693,44 +695,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createJob(job: InsertJob): Promise<Job> {
-    // Generate job code if company is provided
+    // Generate simple incremental job code
     let jobCode = job.jobCode;
     
-    if (!jobCode && job.companyId) {
-      // Get company to extract initials
-      const [company] = await db
-        .select()
-        .from(companies)
-        .where(eq(companies.id, job.companyId));
-      
-      if (company) {
-        // Extract company initials (first word or first 4-5 letters)
-        const companyName = company.name.toUpperCase();
-        let initials = '';
-        
-        // Try to get first word
-        const firstWord = companyName.split(' ')[0];
-        if (firstWord.length >= 3) {
-          initials = firstWord.substring(0, Math.min(5, firstWord.length));
-        } else {
-          // If first word is too short, take first letters of multiple words
-          const words = companyName.split(' ').filter(w => w.length > 0);
-          initials = words.slice(0, 2).map(w => w[0]).join('');
-          if (initials.length < 3) {
-            initials = companyName.replace(/\s/g, '').substring(0, 5);
-          }
-        }
-        
-        // Increment counter
-        const [updatedCompany] = await db
-          .update(companies)
-          .set({ jobCounter: sql`${companies.jobCounter} + 1` })
-          .where(eq(companies.id, job.companyId))
-          .returning({ jobCounter: companies.jobCounter });
-        
-        const counter = updatedCompany.jobCounter || 1;
-        jobCode = `${initials}${String(counter).padStart(3, '0')}`;
-      }
+    if (!jobCode) {
+      // Get next value from sequence
+      const result = await db.execute(sql`SELECT nextval('job_code_seq') as code`);
+      const counter = (result.rows[0] as any).code;
+      jobCode = `VG${String(counter).padStart(3, '0')}`;
     }
     
     const [newJob] = await db.insert(jobs).values({ ...job, jobCode }).returning();

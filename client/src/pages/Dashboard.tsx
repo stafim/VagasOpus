@@ -108,9 +108,9 @@ export default function Dashboard() {
 
       <div className="space-y-8">
         {/* Metrics Cards */}
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           {metricsLoading ? (
-            Array.from({ length: 4 }).map((_, i) => (
+            Array.from({ length: 2 }).map((_, i) => (
               <Skeleton key={i} className="h-32 w-full" />
             ))
           ) : (
@@ -133,133 +133,57 @@ export default function Dashboard() {
                 description="Vagas abertas para candidatura"
                 trend={{ value: "+8%", isPositive: true }}
               />
-              <MetricsCard
-                title="Candidaturas"
-                value={metrics?.totalApplications || 0}
-                icon={UserPlus}
-                iconBgColor="bg-warning/10"
-                iconColor="text-warning"
-                description="Total de candidaturas recebidas"
-                trend={{ value: "+23%", isPositive: true }}
-              />
-              <MetricsCard
-                title="Empresas"
-                value={metrics?.totalCompanies || 0}
-                icon={Building2}
-                iconBgColor="bg-info/10"
-                iconColor="text-info"
-                description="Empresas parceiras cadastradas"
-                trend={{ value: "+3%", isPositive: true }}
-              />
             </>
           )}
         </div>
 
         {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="shadow-sm hover:shadow-lg transition-shadow duration-200">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <div className="w-2 h-2 bg-primary rounded-full"></div>
-                Vagas por Status
-              </CardTitle>
-              <CardDescription>Distribuição das vagas por situação atual</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {jobsByStatusLoading ? (
-                <Skeleton className="h-64 w-full" />
-              ) : (
-                <ResponsiveContainer width="100%" height={280}>
-                  <PieChart>
-                    <Pie
-                      data={jobsByStatus?.map((item) => ({
-                        name: statusLabels[item.status] || item.status,
-                        value: item.count
-                      })) || []}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      outerRadius={90}
-                      fill="hsl(var(--primary))"
-                      dataKey="value"
-                      strokeWidth={2}
-                      stroke="hsl(var(--background))"
-                    >
-                      {jobsByStatus?.map((entry, index: number) => (
-                        <Cell key={`cell-${index}`} fill={statusColors[entry.status] || '#6b7280'} />
-                      )) || []}
-                    </Pie>
-                    <Tooltip 
-                      contentStyle={{
-                        backgroundColor: 'hsl(var(--popover))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-sm hover:shadow-lg transition-shadow duration-200">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <div className="w-2 h-2 bg-chart-2 rounded-full"></div>
-                Candidaturas por Mês
-              </CardTitle>
-              <CardDescription>Evolução mensal das candidaturas recebidas</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {applicationsByMonthLoading ? (
-                <Skeleton className="h-64 w-full" />
-              ) : (
-                <ResponsiveContainer width="100%" height={280}>
-                  <LineChart
-                    data={applicationsByMonth?.map((item) => ({
-                      month: item.month,
-                      count: item.count
+        <Card className="shadow-sm hover:shadow-lg transition-shadow duration-200">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <div className="w-2 h-2 bg-primary rounded-full"></div>
+              Vagas por Status
+            </CardTitle>
+            <CardDescription>Distribuição das vagas por situação atual</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {jobsByStatusLoading ? (
+              <Skeleton className="h-64 w-full" />
+            ) : (
+              <ResponsiveContainer width="100%" height={280}>
+                <PieChart>
+                  <Pie
+                    data={jobsByStatus?.map((item) => ({
+                      name: statusLabels[item.status] || item.status,
+                      value: item.count
                     })) || []}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={90}
+                    fill="hsl(var(--primary))"
+                    dataKey="value"
+                    strokeWidth={2}
+                    stroke="hsl(var(--background))"
                   >
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-                    <XAxis 
-                      dataKey="month" 
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <YAxis 
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <Tooltip 
-                      contentStyle={{
-                        backgroundColor: 'hsl(var(--popover))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                      }}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="count" 
-                      stroke="hsl(var(--chart-2))" 
-                      strokeWidth={3}
-                      dot={{ fill: 'hsl(var(--chart-2))', strokeWidth: 2, r: 5 }}
-                      activeDot={{ r: 7, stroke: 'hsl(var(--chart-2))', strokeWidth: 2, fill: 'hsl(var(--background))' }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                    {jobsByStatus?.map((entry, index: number) => (
+                      <Cell key={`cell-${index}`} fill={statusColors[entry.status] || '#6b7280'} />
+                    )) || []}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--popover))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Recent Jobs Table */}
         <Card className="shadow-sm hover:shadow-lg transition-shadow duration-200">

@@ -7,6 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Briefcase, Mail, Lock, User, ArrowRight, CheckCircle2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useLocation } from "wouter";
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -25,6 +28,9 @@ type RegisterForm = z.infer<typeof registerSchema>;
 
 export default function LoginDemo() {
   const [isLogin, setIsLogin] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   const loginForm = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -43,6 +49,58 @@ export default function LoginDemo() {
       lastName: "",
     },
   });
+
+  const handleLogin = async (data: LoginForm) => {
+    setIsLoading(true);
+    try {
+      const response = await apiRequest("POST", "/api/auth/login", data);
+      
+      toast({
+        title: "Login realizado com sucesso",
+        description: `Bem-vindo de volta!`,
+      });
+
+      // Invalidate auth query to update UI
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      
+      // Redirect to dashboard
+      setLocation("/");
+    } catch (error: any) {
+      toast({
+        title: "Erro no login",
+        description: error.message || "Email ou senha inválidos",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRegister = async (data: RegisterForm) => {
+    setIsLoading(true);
+    try {
+      await apiRequest("POST", "/api/auth/register", data);
+      
+      toast({
+        title: "Conta criada com sucesso",
+        description: "Você já está logado!",
+      });
+
+      // Invalidate auth query to update UI
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      
+      // Redirect to dashboard
+      setLocation("/");
+    } catch (error: any) {
+      toast({
+        title: "Erro no registro",
+        description: error.message || "Não foi possível criar a conta",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800 flex items-center justify-center p-4 relative overflow-hidden">
@@ -154,7 +212,7 @@ export default function LoginDemo() {
 
             <CardContent className="pb-8">
               {isLogin ? (
-                <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+                <form className="space-y-5" onSubmit={loginForm.handleSubmit(handleLogin)}>
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-gray-700 font-medium">Email</Label>
                     <div className="relative">
@@ -197,17 +255,18 @@ export default function LoginDemo() {
 
                   <Button
                     type="submit"
+                    disabled={isLoading}
                     className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-medium shadow-lg hover:shadow-xl transition-all"
                     data-testid="button-login"
                   >
                     <span className="flex items-center gap-2">
-                      Entrar
-                      <ArrowRight className="w-5 h-5" />
+                      {isLoading ? "Entrando..." : "Entrar"}
+                      {!isLoading && <ArrowRight className="w-5 h-5" />}
                     </span>
                   </Button>
                 </form>
               ) : (
-                <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+                <form className="space-y-5" onSubmit={registerForm.handleSubmit(handleRegister)}>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="firstName" className="text-gray-700 font-medium">Nome</Label>
@@ -287,12 +346,13 @@ export default function LoginDemo() {
 
                   <Button
                     type="submit"
+                    disabled={isLoading}
                     className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-medium shadow-lg hover:shadow-xl transition-all"
                     data-testid="button-register"
                   >
                     <span className="flex items-center gap-2">
-                      Criar conta
-                      <ArrowRight className="w-5 h-5" />
+                      {isLoading ? "Criando conta..." : "Criar conta"}
+                      {!isLoading && <ArrowRight className="w-5 h-5" />}
                     </span>
                   </Button>
                 </form>

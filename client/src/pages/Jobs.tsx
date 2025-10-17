@@ -26,7 +26,7 @@ import {
   Edit,
   Users,
   User,
-  Trash2,
+  Eye,
   Briefcase,
   Plus,
   LayoutDashboard,
@@ -84,7 +84,6 @@ const calculateSLA = (createdAt: string, slaDeadline: string) => {
 export default function Jobs() {
   const [showJobModal, setShowJobModal] = useState(false);
   const [editingJobId, setEditingJobId] = useState<string | undefined>();
-  const [deletingJobId, setDeletingJobId] = useState<string | undefined>();
   const [search, setSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
@@ -136,28 +135,6 @@ export default function Jobs() {
         throw new Error(`${response.status}: ${response.statusText}`);
       }
       return await response.json();
-    },
-  });
-
-  const deleteJobMutation = useMutation({
-    mutationFn: async (jobId: string) => {
-      await apiRequest("DELETE", `/api/jobs/${jobId}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
-      toast({
-        title: "Sucesso",
-        description: "Vaga excluída com sucesso!",
-      });
-      setDeletingJobId(undefined);
-    },
-    onError: () => {
-      toast({
-        title: "Erro",
-        description: "Erro ao excluir vaga. Tente novamente.",
-        variant: "destructive",
-      });
     },
   });
 
@@ -283,10 +260,6 @@ export default function Jobs() {
   const handleCloseModal = () => {
     setShowJobModal(false);
     setEditingJobId(undefined);
-  };
-
-  const handleDeleteJob = (jobId: string) => {
-    deleteJobMutation.mutate(jobId);
   };
 
   const handleAssignToMe = (jobId: string) => {
@@ -688,10 +661,11 @@ export default function Jobs() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => setDeletingJobId(job.id)}
-                              data-testid={`button-delete-${job.id}`}
+                              onClick={() => handleEditJob(job.id)}
+                              title="Ver detalhes da vaga"
+                              data-testid={`button-details-${job.id}`}
                             >
-                              <Trash2 className="h-4 w-4 text-destructive" />
+                              <Eye className="h-4 w-4 text-blue-600" />
                             </Button>
                           </div>
                         </TableCell>
@@ -725,29 +699,6 @@ export default function Jobs() {
         onClose={handleCloseModal}
         jobId={editingJobId}
       />
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!deletingJobId} onOpenChange={() => setDeletingJobId(undefined)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir esta vaga? Esta ação não pode ser desfeita.
-              Todas as candidaturas relacionadas também serão removidas.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel data-testid="button-cancel-delete">Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => deletingJobId && handleDeleteJob(deletingJobId)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              data-testid="button-confirm-delete"
-            >
-              Excluir Vaga
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }

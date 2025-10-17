@@ -304,15 +304,15 @@ export default function Jobs() {
         {/* Filters and Search */}
         <div className="bg-card p-6 rounded-lg border border-border">
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-            <div className="relative flex-1 max-w-md">
+            <div className="relative flex-1 max-w-xl">
               <Input
-                placeholder="Buscar vagas por profissão..."
-                className="pl-10"
+                placeholder="Buscar por ID, profissão, empresa ou categoria..."
+                className="pl-10 h-11 text-base"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 data-testid="input-search"
               />
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
             </div>
             <div className="flex gap-2">
               <Button 

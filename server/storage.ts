@@ -600,9 +600,11 @@ export class DatabaseStorage implements IStorage {
     if (search) {
       whereConditions.push(
         or(
+          ilike(jobs.jobCode, `%${search}%`),
           ilike(jobs.title, `%${search}%`),
           ilike(professions.name, `%${search}%`),
-          ilike(professions.category, `%${search}%`)
+          ilike(professions.category, `%${search}%`),
+          ilike(companies.name, `%${search}%`)
         )
       );
     }

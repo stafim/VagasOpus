@@ -1229,20 +1229,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getJobsByCompany(month?: string): Promise<Array<{ companyId: string; companyName: string; count: number }>> {
-    let query = db
+    const conditions = [eq(jobs.status, 'aberto')];
+    
+    if (month) {
+      conditions.push(sql`strftime('%Y-%m', ${jobs.createdAt}) = ${month}`);
+    }
+    
+    const result = await db
       .select({
         companyId: jobs.companyId,
         companyName: companies.name,
         count: count(),
       })
       .from(jobs)
-      .leftJoin(companies, eq(jobs.companyId, companies.id));
-    
-    if (month) {
-      query = query.where(sql`strftime('%Y-%m', ${jobs.createdAt}) = ${month}`);
-    }
-    
-    const result = await query
+      .leftJoin(companies, eq(jobs.companyId, companies.id))
+      .where(and(...conditions))
       .groupBy(jobs.companyId, companies.name)
       .orderBy(desc(count()));
     

@@ -395,9 +395,9 @@ export default function Dashboard() {
             <CardHeader className="pb-3">
               <CardTitle className="text-lg font-semibold flex items-center gap-2">
                 <div className="w-2 h-2 bg-chart-4 rounded-full"></div>
-                Vagas por Empresa
+                Vagas Abertas por Empresa
               </CardTitle>
-              <CardDescription>Top 5 empresas com mais vagas</CardDescription>
+              <CardDescription>Top 5 empresas com mais vagas abertas</CardDescription>
             </CardHeader>
             <CardContent>
               {jobsByCompanyLoading ? (

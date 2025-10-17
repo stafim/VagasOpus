@@ -6,6 +6,15 @@ This is a job management system (VagasPro) built with React and Express, designe
 
 # Recent Changes (October 17, 2025)
 
+## Dashboard - Vagas Abertas por Empresa Chart
+- **Modified**: Changed "Vagas por Empresa" chart to show only open jobs (status "aberto")
+- **Changes**:
+  - Chart title updated to "Vagas Abertas por Empresa"
+  - Chart description updated to "Top 5 empresas com mais vagas abertas"
+  - Backend query filters jobs with `status = 'aberto'` only
+  - Applied to both regular and monthly filtered views
+- **Technical**: Modified `getJobsByCompany()` in storage.ts to add WHERE clause filtering by status
+
 ## Job Notes Feature
 - **Added**: Campo de notas nas vagas para observações e anotações
 - **Features**:

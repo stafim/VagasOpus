@@ -4,9 +4,10 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Plus, Menu, LogOut, Search } from "lucide-react";
+import { Bell, Plus, Menu, LogOut, Search, Shield } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 
 interface TopBarProps {
   title?: string;
@@ -24,6 +25,13 @@ export default function TopBar({
   const { toast } = useToast();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [, setLocation] = useLocation();
+
+  // Check if user is in AUTH_BYPASS mode
+  const { data: user } = useQuery<{ id: string; email: string; name?: string }>({
+    queryKey: ["/api/auth/user"],
+  });
+
+  const isAuthBypass = user?.id === "demo-user-bypass";
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -66,7 +74,28 @@ export default function TopBar({
           </Button>
           
           <div className="flex flex-col">
-            <h2 className="text-2xl font-bold text-foreground tracking-tight">{title}</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl font-bold text-foreground tracking-tight">{title}</h2>
+              {isAuthBypass ? (
+                <Badge 
+                  variant="outline" 
+                  className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 flex items-center gap-1"
+                  data-testid="badge-auth-mode"
+                >
+                  <Shield className="h-3 w-3" />
+                  Modo Desenvolvimento
+                </Badge>
+              ) : (
+                <Badge 
+                  variant="outline" 
+                  className="bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20 flex items-center gap-1"
+                  data-testid="badge-auth-mode"
+                >
+                  <Shield className="h-3 w-3" />
+                  Modo Produção
+                </Badge>
+              )}
+            </div>
             <p className="text-sm text-muted-foreground">
               {new Date().toLocaleDateString('pt-BR', { 
                 weekday: 'long', 

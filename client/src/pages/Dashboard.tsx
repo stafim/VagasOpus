@@ -237,12 +237,12 @@ export default function Dashboard() {
           ) : (
             <>
               <MetricsCard
-                title="Vagas Totais"
+                title="Vagas abertas no mês"
                 value={metrics?.totalJobs || 0}
                 icon={Briefcase}
                 iconBgColor="bg-primary/10"
                 iconColor="text-primary"
-                description="Todas as vagas cadastradas"
+                description="Vagas abertas no período selecionado"
                 trend={{ value: "+12%", isPositive: true }}
               />
               <MetricsCard
